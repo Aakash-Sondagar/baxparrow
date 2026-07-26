@@ -14,8 +14,8 @@ export default function CartPage() {
 
   if (loading) {
     return (
-      <section className="mx-auto max-w-[1100px] px-7 pt-7 pb-[60px]">
-        <h1 className="m-0 mb-6 font-display text-[34px] font-extrabold tracking-[-.02em]">
+      <section className="mx-auto max-w-[1100px] px-4 pt-7 pb-[60px] sm:px-7">
+        <h1 className="m-0 mb-6 font-display text-[28px] font-extrabold tracking-[-.02em] sm:text-[34px]">
           Your cart
         </h1>
         <div className="text-sm text-muted">Loading cart…</div>
@@ -24,10 +24,12 @@ export default function CartPage() {
   }
 
   return (
-    <section className="mx-auto max-w-[1100px] px-7 pt-7 pb-[60px]">
-      <h1 className="m-0 mb-6 font-display text-[34px] font-extrabold tracking-[-.02em]">Your cart</h1>
+    <section className="mx-auto max-w-[1100px] px-4 pt-7 pb-[60px] sm:px-7">
+      <h1 className="m-0 mb-6 font-display text-[28px] font-extrabold tracking-[-.02em] sm:text-[34px]">
+        Your cart
+      </h1>
       {items.length === 0 ? (
-        <div className="rounded-[15px] border border-border bg-card p-16 text-center">
+        <div className="rounded-[15px] border border-border bg-card p-10 text-center sm:p-16">
           <div className="mb-2 font-display text-xl font-bold">Your cart is empty</div>
           <p className="m-0 mb-5 text-muted">Explore our bestsellers and add something you love.</p>
           <button
@@ -38,26 +40,26 @@ export default function CartPage() {
           </button>
         </div>
       ) : (
-        <div className="grid grid-cols-[1fr_360px] items-start gap-7">
+        <div className="grid grid-cols-1 items-start gap-7 lg:grid-cols-[1fr_360px]">
           <div className="flex flex-col gap-3.5">
             {items.map((l) => (
               <div
                 key={l.lineKey}
-                className="flex items-center gap-4 rounded-[15px] border border-border bg-card p-4"
+                className="flex flex-wrap items-center gap-3 rounded-[15px] border border-border bg-card p-3 sm:flex-nowrap sm:gap-4 sm:p-4"
               >
                 {l.image ? (
                   <img
                     src={l.image}
                     alt=""
-                    className="h-[88px] w-[88px] shrink-0 rounded-[11px] object-cover"
+                    className="h-[72px] w-[72px] shrink-0 rounded-[11px] object-cover sm:h-[88px] sm:w-[88px]"
                   />
                 ) : (
                   <div
-                    className="h-[88px] w-[88px] shrink-0 rounded-[11px]"
+                    className="h-[72px] w-[72px] shrink-0 rounded-[11px] sm:h-[88px] sm:w-[88px]"
                     style={{ background: tile(l.toneIndex) }}
                   />
                 )}
-                <div className="flex-1">
+                <div className="min-w-0 flex-1 basis-[calc(100%-5.5rem)] sm:basis-auto">
                   <div className="font-mono text-[11px] text-muted2">{l.cat}</div>
                   <div className="font-display text-base font-bold">{l.name}</div>
                   {(l.color || l.size) && (
@@ -89,34 +91,36 @@ export default function CartPage() {
                   )}
                   <div className="mt-0.5 text-[13px] text-muted">{inr(l.price)} each</div>
                 </div>
-                <div className="flex items-center overflow-hidden rounded-[9px] border border-border">
+                <div className="flex w-full items-center justify-between gap-3 sm:w-auto sm:justify-start">
+                  <div className="flex items-center overflow-hidden rounded-[9px] border border-border">
+                    <button
+                      onClick={() => setQty(l.lineKey, -1)}
+                      className="h-[34px] w-[34px] cursor-pointer border-none bg-bg text-lg text-text2"
+                    >
+                      −
+                    </button>
+                    <span className="w-[34px] text-center font-mono font-bold">{l.qty}</span>
+                    <button
+                      onClick={() => setQty(l.lineKey, 1)}
+                      className="h-[34px] w-[34px] cursor-pointer border-none bg-bg text-lg text-text2"
+                    >
+                      +
+                    </button>
+                  </div>
+                  <div className="w-auto text-right font-display text-base font-bold sm:w-[90px]">
+                    {inr(l.lineTotal)}
+                  </div>
                   <button
-                    onClick={() => setQty(l.lineKey, -1)}
-                    className="h-[34px] w-[34px] cursor-pointer border-none bg-bg text-lg text-text2"
+                    onClick={() => remove(l.lineKey)}
+                    className="cursor-pointer border-none bg-none text-lg text-muted2"
                   >
-                    −
-                  </button>
-                  <span className="w-[34px] text-center font-mono font-bold">{l.qty}</span>
-                  <button
-                    onClick={() => setQty(l.lineKey, 1)}
-                    className="h-[34px] w-[34px] cursor-pointer border-none bg-bg text-lg text-text2"
-                  >
-                    +
+                    ×
                   </button>
                 </div>
-                <div className="w-[90px] text-right font-display text-base font-bold">
-                  {inr(l.lineTotal)}
-                </div>
-                <button
-                  onClick={() => remove(l.lineKey)}
-                  className="cursor-pointer border-none bg-none text-lg text-muted2"
-                >
-                  ×
-                </button>
               </div>
             ))}
           </div>
-          <div className="sticky top-[112px] rounded-[15px] border border-border bg-card p-6">
+          <div className="sticky bottom-0 z-10 rounded-[15px] border border-border bg-card p-5 sm:p-6 lg:top-[112px] lg:bottom-auto">
             <div className="mb-[18px] font-display text-lg font-bold">Order summary</div>
             {(
               [
