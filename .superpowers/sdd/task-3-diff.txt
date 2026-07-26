@@ -1,0 +1,138 @@
+﻿diff --git "a/.superpowers\\sdd\\snapshots\\task-3-before\\StoreLayout.tsx" "b/apps\\web\\src\\components\\StoreLayout.tsx"
+index 3f6403b..1a5fadd 100644
+--- "a/.superpowers\\sdd\\snapshots\\task-3-before\\StoreLayout.tsx"
++++ "b/apps\\web\\src\\components\\StoreLayout.tsx"
+@@ -1,53 +1,104 @@
+ import { Link, NavLink, Outlet, useNavigate } from "react-router-dom";
+-import { Search, Heart, ShoppingBag } from "lucide-react";
+-import { t } from "../styles/tokens";
++import { Search, Heart, ShoppingBag, Bell } from "lucide-react";
+ import { useCart } from "../features/cart/CartContext";
++import { useAuth } from "../features/auth/AuthContext";
++
+ export function StoreLayout() {
+   const { count } = useCart();
++  const { user } = useAuth();
+   const nav = useNavigate();
++
+   return (
+-    <div style={{ background: t.bg, minHeight: "100vh" }}>
+-      <div style={{ background: t.cognac, color: "#FBEEE4", textAlign: "center", padding: "8px 16px", fontSize: 13, fontWeight: 600 }}>
++    <div className="min-h-screen bg-bg">
++      <div className="bg-cognac px-4 py-2 text-center text-[13px] font-semibold text-[#FBEEE4]">
+         Monsoon Sale ┬╖ Flat 20% off Travel &amp; Office ranges ┬╖ Free shipping over Γé╣999
+       </div>
+-      <header style={{ position: "sticky", top: 0, zIndex: 40, background: "rgba(247,244,239,.92)", backdropFilter: "blur(8px)", borderBottom: `1px solid ${t.border}` }}>
+-        <div style={{ maxWidth: 1240, margin: "0 auto", padding: "16px 28px", display: "flex", alignItems: "center", gap: 28 }}>
+-          <Link to="/" style={{ display: "flex", alignItems: "center", gap: 10 }}>
+-            <span style={{ width: 34, height: 34, borderRadius: 9, background: t.ink, color: t.tan, fontFamily: t.displayFont, fontWeight: 800, fontSize: 18, display: "grid", placeItems: "center" }}>B</span>
+-            <span style={{ fontFamily: t.displayFont, fontWeight: 800, fontSize: 22, letterSpacing: "-.02em", color: t.ink }}>Baxparrow</span>
++      <header className="sticky top-0 z-40 border-b border-border bg-bg/92 backdrop-blur-[8px]">
++        <div className="mx-auto flex max-w-[1240px] items-center gap-7 px-7 py-4">
++          <Link to="/" className="flex items-center gap-2.5 text-ink hover:text-ink">
++            <span className="grid h-[34px] w-[34px] place-items-center rounded-lg bg-ink font-display text-lg font-extrabold text-tan">
++              B
++            </span>
++            <span className="font-display text-[22px] font-extrabold tracking-[-0.02em] text-ink">Baxparrow</span>
+           </Link>
+-          <nav style={{ display: "flex", gap: 22, fontSize: 14, fontWeight: 500 }}>
+-            {["Shop All","Travel","Office","Leather"].map(x =>
+-              <NavLink key={x} to="/shop" style={{ color: t.text2 }}>{x}</NavLink>)}
+-            <NavLink to="/shop" style={{ color: t.cognac, fontWeight: 600 }}>Wholesale</NavLink>
++          <nav className="flex gap-[22px] text-sm font-medium">
++            {["Shop All", "Travel", "Office", "Leather"].map((x) => (
++              <NavLink key={x} to="/shop" className="text-text2 hover:text-cognac">
++                {x}
++              </NavLink>
++            ))}
++            <NavLink to="/shop" className="font-semibold text-cognac">
++              Wholesale
++            </NavLink>
+           </nav>
+-          <div style={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: 14 }}>
+-            <button onClick={() => nav("/search")} style={{ display: "flex", alignItems: "center", gap: 8, background: t.card, border: `1px solid ${t.border}`, borderRadius: 10, padding: "9px 14px", color: t.muted2, fontSize: 13, cursor: "pointer", minWidth: 200 }}>
++          <div className="ml-auto flex items-center gap-3.5">
++            <button
++              type="button"
++              onClick={() => nav("/search")}
++              className="flex min-w-[200px] cursor-pointer items-center gap-2 rounded-[10px] border border-border bg-card px-3.5 py-2 text-[13px] text-muted2"
++            >
+               <Search size={15} /> Search 1,000+ bagsΓÇª
+             </button>
+-            <button style={{ background: "none", border: "none", cursor: "pointer", color: t.text2 }}><Heart size={20} /></button>
+-            <button onClick={() => nav("/cart")} style={{ position: "relative", background: "none", border: "none", cursor: "pointer", color: t.ink }}>
++            {user && (
++              <button type="button" className="relative cursor-pointer border-0 bg-transparent text-text2" aria-label="Notifications">
++                {/* TASK 9: replace with <NotificationBell /> */}
++                <Bell size={20} />
++              </button>
++            )}
++            <button type="button" className="cursor-pointer border-0 bg-transparent text-text2">
++              <Heart size={20} />
++            </button>
++            <button
++              type="button"
++              onClick={() => nav("/cart")}
++              className="relative cursor-pointer border-0 bg-transparent text-ink"
++            >
+               <ShoppingBag size={20} />
+-              {count > 0 && <span style={{ position: "absolute", top: -6, right: -8, background: t.cognac, color: "#fff", fontSize: 10, fontWeight: 700, minWidth: 17, height: 17, borderRadius: 9, display: "grid", placeItems: "center", padding: "0 4px", fontFamily: t.monoFont }}>{count}</span>}
++              {count > 0 && (
++                <span className="absolute -top-1.5 -right-2 grid h-[17px] min-w-[17px] place-items-center rounded-lg bg-cognac px-1 font-mono text-[10px] font-bold text-white">
++                  {count}
++                </span>
++              )}
+             </button>
+           </div>
+         </div>
+       </header>
+-      <main style={{ animation: "bxfade .3s ease" }}><Outlet /></main>
+-      <footer style={{ background: t.ink, color: "#CDC4BA", marginTop: 20 }}>
+-        <div style={{ maxWidth: 1240, margin: "0 auto", padding: "48px 28px 32px", display: "grid", gridTemplateColumns: "1.6fr 1fr 1fr 1fr", gap: 36 }}>
++      <main className="animate-bxfade">
++        <Outlet />
++      </main>
++      <footer className="mt-5 bg-ink text-[#CDC4BA]">
++        <div className="mx-auto grid max-w-[1240px] grid-cols-[1.6fr_1fr_1fr_1fr] gap-9 px-7 pt-12 pb-8">
+           <div>
+-            <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 14 }}>
+-              <span style={{ width: 30, height: 30, borderRadius: 8, background: t.tan, color: t.ink, fontFamily: t.displayFont, fontWeight: 800, display: "grid", placeItems: "center" }}>B</span>
+-              <span style={{ fontFamily: t.displayFont, fontWeight: 800, fontSize: 20, color: t.bg }}>Baxparrow</span>
++            <div className="mb-3.5 flex items-center gap-2.5">
++              <span className="grid h-[30px] w-[30px] place-items-center rounded-lg bg-tan font-display font-extrabold text-ink">
++                B
++              </span>
++              <span className="font-display text-xl font-extrabold text-bg">Baxparrow</span>
+             </div>
+-            <p style={{ fontSize: 13.5, lineHeight: 1.6, maxWidth: 280, margin: 0 }}>Manufacturer &amp; wholesaler of bags ΓÇö Byculla, Mumbai. Carry with confidence.</p>
++            <p className="m-0 max-w-[280px] text-[13.5px] leading-[1.6]">
++              Manufacturer &amp; wholesaler of bags ΓÇö Byculla, Mumbai. Carry with confidence.
++            </p>
+           </div>
+-          {[["Shop",["Backpacks","Office & Laptop","Travel & Luggage","Leather"]],["Company",["About","Wholesale","Track order","Contact"]],["Support",["Shipping","Returns","Warranty","FAQ"]]].map(([h, items]: any) =>
+-            <div key={h}><div style={{ color: t.bg, fontWeight: 700, fontSize: 14, marginBottom: 12 }}>{h}</div>
+-              <div style={{ display: "flex", flexDirection: "column", gap: 8, fontSize: 13.5 }}>{items.map((i: string) => <span key={i}>{i}</span>)}</div></div>)}
++          {(
++            [
++              ["Shop", ["Backpacks", "Office & Laptop", "Travel & Luggage", "Leather"]],
++              ["Company", ["About", "Wholesale", "Track order", "Contact"]],
++              ["Support", ["Shipping", "Returns", "Warranty", "FAQ"]],
++            ] as const
++          ).map(([h, items]) => (
++            <div key={h}>
++              <div className="mb-3 text-sm font-bold text-bg">{h}</div>
++              <div className="flex flex-col gap-2 text-[13.5px]">
++                {items.map((i) => (
++                  <span key={i}>{i}</span>
++                ))}
++              </div>
++            </div>
++          ))}
++        </div>
++        <div className="border-t border-[#2E2A25] px-7 py-4.5 text-center font-mono text-[12.5px] text-[#8A8178]">
++          ┬⌐ 2026 Baxparrow ┬╖ Made in Mumbai ┬╖ Payments secured by Razorpay
+         </div>
+-        <div style={{ borderTop: "1px solid #2E2A25", padding: "18px 28px", textAlign: "center", fontSize: 12.5, color: "#8A8178", fontFamily: t.monoFont }}>┬⌐ 2026 Baxparrow ┬╖ Made in Mumbai ┬╖ Payments secured by Razorpay</div>
+       </footer>
+     </div>
+   );

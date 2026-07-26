@@ -1,0 +1,287 @@
+# Task 1 Review Package
+Base: pre-task file snapshot
+Head: working tree after Task 1
+Commits: none (no git)
+
+## Stat
+
+======= package.json =======
+
+diff --git "a/c:\\Users\\Ishan\\Documents\\Learning\\baxparrow\\.superpowers\\sdd\\snapshots\\task-1-before\\package.json" "b/c:\\Users\\Ishan\\Documents\\Learning\\baxparrow\\apps\\web\\package.json"
+index f4ba835..63c1cd0 100644
+--- "a/c:\\Users\\Ishan\\Documents\\Learning\\baxparrow\\.superpowers\\sdd\\snapshots\\task-1-before\\package.json"
++++ "b/c:\\Users\\Ishan\\Documents\\Learning\\baxparrow\\apps\\web\\package.json"
+@@ -11,19 +11,21 @@
+   },
+   "dependencies": {
+     "@baxparrow/shared": "workspace:*",
++    "@tanstack/react-query": "^5.51.0",
++    "axios": "^1.7.2",
++    "lucide-react": "^0.417.0",
+     "react": "^18.3.1",
+     "react-dom": "^18.3.1",
+     "react-router-dom": "^6.26.0",
+-    "@tanstack/react-query": "^5.51.0",
+-    "axios": "^1.7.2",
+-    "recharts": "^2.12.7",
+-    "lucide-react": "^0.417.0"
++    "recharts": "^2.12.7"
+   },
+   "devDependencies": {
+-    "typescript": "^5.5.4",
+-    "vite": "^5.3.4",
+-    "@vitejs/plugin-react": "^4.3.1",
++    "@tailwindcss/vite": "^4.3.3",
+     "@types/react": "^18.3.3",
+-    "@types/react-dom": "^18.3.0"
++    "@types/react-dom": "^18.3.0",
++    "@vitejs/plugin-react": "^4.3.1",
++    "tailwindcss": "^4.3.3",
++    "typescript": "^5.5.4",
++    "vite": "^5.3.4"
+   }
+ }
+\ No newline at end of file
+
+
+======= vite.config.ts =======
+
+diff --git "a/c:\\Users\\Ishan\\Documents\\Learning\\baxparrow\\.superpowers\\sdd\\snapshots\\task-1-before\\vite.config.ts" "b/c:\\Users\\Ishan\\Documents\\Learning\\baxparrow\\apps\\web\\vite.config.ts"
+index 8fe3acc..7c5450e 100644
+--- "a/c:\\Users\\Ishan\\Documents\\Learning\\baxparrow\\.superpowers\\sdd\\snapshots\\task-1-before\\vite.config.ts"
++++ "b/c:\\Users\\Ishan\\Documents\\Learning\\baxparrow\\apps\\web\\vite.config.ts"
+@@ -1,8 +1,14 @@
+ import { defineConfig } from "vite";
+ import react from "@vitejs/plugin-react";
++import tailwindcss from "@tailwindcss/vite";
+ import { fileURLToPath } from "url";
++
+ export default defineConfig({
+-  plugins: [react()],
+-  resolve: { alias: { "@baxparrow/shared": fileURLToPath(new URL("../../packages/shared/src", import.meta.url)) } },
++  plugins: [react(), tailwindcss()],
++  resolve: {
++    alias: {
++      "@baxparrow/shared": fileURLToPath(new URL("../../packages/shared/src", import.meta.url)),
++    },
++  },
+   server: { port: 5173 },
+ });
+
+
+======= src\styles\global.css =======
+
+diff --git "a/c:\\Users\\Ishan\\Documents\\Learning\\baxparrow\\.superpowers\\sdd\\snapshots\\task-1-before\\global.css" "b/c:\\Users\\Ishan\\Documents\\Learning\\baxparrow\\apps\\web\\src\\styles\\global.css"
+index e9398ee..436867e 100644
+--- "a/c:\\Users\\Ishan\\Documents\\Learning\\baxparrow\\.superpowers\\sdd\\snapshots\\task-1-before\\global.css"
++++ "b/c:\\Users\\Ishan\\Documents\\Learning\\baxparrow\\apps\\web\\src\\styles\\global.css"
+@@ -1,47 +1,96 @@
+-* {
+-    box-sizing: border-box
+-}
++@import "tailwindcss";
+ 
+-html,
+-body {
+-    margin: 0;
+-    padding: 0
++:root {
++  --color-bg: #f7f4ef;
++  --color-canvas: #ede8e0;
++  --color-admin-canvas: #f4f1ec;
++  --color-ink: #1c1917;
++  --color-cognac: #a94d28;
++  --color-cognac-dark: #8f3f20;
++  --color-tan: #e8b58c;
++  --color-card: #ffffff;
++  --color-border: #e7e2d9;
++  --color-subtle: #faf7f2;
++  --color-text: #292524;
++  --color-text2: #44403c;
++  --color-text3: #57534e;
++  --color-muted: #78716c;
++  --color-muted2: #a8a29e;
++  --color-green: #3f7d5b;
++  --color-green-bg: #eaf3ed;
++  --color-amber: #b4772a;
++  --color-danger: #b4523a;
++  --font-display: "Archivo", sans-serif;
++  --font-body: "Instrument Sans", system-ui, sans-serif;
++  --font-mono: "Space Mono", monospace;
+ }
+ 
+-body {
+-    font-family: 'Instrument Sans', system-ui, sans-serif;
+-    color: #1C1917;
+-    background: #EDE8E0;
+-    -webkit-font-smoothing: antialiased
++@theme {
++  --color-bg: var(--color-bg);
++  --color-canvas: var(--color-canvas);
++  --color-admin-canvas: var(--color-admin-canvas);
++  --color-ink: var(--color-ink);
++  --color-cognac: var(--color-cognac);
++  --color-cognac-dark: var(--color-cognac-dark);
++  --color-tan: var(--color-tan);
++  --color-card: var(--color-card);
++  --color-border: var(--color-border);
++  --color-subtle: var(--color-subtle);
++  --color-text: var(--color-text);
++  --color-text2: var(--color-text2);
++  --color-text3: var(--color-text3);
++  --color-muted: var(--color-muted);
++  --color-muted2: var(--color-muted2);
++  --color-green: var(--color-green);
++  --color-green-bg: var(--color-green-bg);
++  --color-amber: var(--color-amber);
++  --color-danger: var(--color-danger);
++  --font-family-display: var(--font-display);
++  --font-family-body: var(--font-body);
++  --font-family-mono: var(--font-mono);
+ }
+ 
+-a {
+-    color: #A94D28;
+-    text-decoration: none
+-}
+-
+-a:hover {
+-    color: #8F3F20
++@layer base {
++  * {
++    box-sizing: border-box;
++  }
++  html,
++  body {
++    margin: 0;
++    padding: 0;
++  }
++  body {
++    font-family: var(--font-body);
++    color: var(--color-ink);
++    background: var(--color-canvas);
++    -webkit-font-smoothing: antialiased;
++  }
++  a {
++    color: var(--color-cognac);
++    text-decoration: none;
++  }
++  a:hover {
++    color: var(--color-cognac-dark);
++  }
++  button,
++  input,
++  textarea,
++  select {
++    font-family: inherit;
++  }
+ }
+ 
+-button {
+-    font-family: inherit
++@keyframes bxfade {
++  from {
++    opacity: 0;
++    transform: translateY(6px);
++  }
++  to {
++    opacity: 1;
++    transform: none;
++  }
+ }
+ 
+-input,
+-textarea,
+-select {
+-    font-family: inherit
++@utility animate-bxfade {
++  animation: bxfade 0.3s ease;
+ }
+-
+-@keyframes bxfade {
+-    from {
+-        opacity: 0;
+-        transform: translateY(6px)
+-    }
+-
+-    to {
+-        opacity: 1;
+-        transform: none
+-    }
+-}
+\ No newline at end of file
+
+
+======= src\styles\tokens.ts =======
+
+diff --git "a/c:\\Users\\Ishan\\Documents\\Learning\\baxparrow\\.superpowers\\sdd\\snapshots\\task-1-before\\tokens.ts" "b/c:\\Users\\Ishan\\Documents\\Learning\\baxparrow\\apps\\web\\src\\styles\\tokens.ts"
+index f04c3f2..78b7a98 100644
+--- "a/c:\\Users\\Ishan\\Documents\\Learning\\baxparrow\\.superpowers\\sdd\\snapshots\\task-1-before\\tokens.ts"
++++ "b/c:\\Users\\Ishan\\Documents\\Learning\\baxparrow\\apps\\web\\src\\styles\\tokens.ts"
+@@ -1,28 +1,4 @@
+-export const t = {
+-  bg: "#F7F4EF",
+-  canvas: "#EDE8E0",
+-  adminCanvas: "#F4F1EC",
+-  ink: "#1C1917",
+-  cognac: "#A94D28",
+-  cognacDark: "#8F3F20",
+-  tan: "#E8B58C",
+-  card: "#FFFFFF",
+-  border: "#E7E2D9",
+-  subtle: "#FAF7F2",
+-  text: "#292524",
+-  text2: "#44403C",
+-  text3: "#57534E",
+-  muted: "#78716C",
+-  muted2: "#A8A29E",
+-  green: "#3F7D5B",
+-  greenBg: "#EAF3ED",
+-  amber: "#B4772A",
+-  danger: "#B4523A",
+-  displayFont: "'Archivo', sans-serif",
+-  bodyFont: "'Instrument Sans', system-ui, sans-serif",
+-  monoFont: "'Space Mono', monospace",
+-};
+-
++/** Product placeholder gradients GÇö not expressible as static Tailwind utilities. */
+ export const tile = (n: number) => {
+   const pal = [
+     ["#E7D8C6", "#DFCCB5"],
+@@ -33,8 +9,34 @@ export const tile = (n: number) => {
+     ["#DBDEE6", "#CED3DE"],
+     ["#F0E6CC", "#EADCB8"],
+     ["#DEDCD8", "#D3D0CB"],
+-    ["#EEDCDA", "#E5CDCB"]
++    ["#EEDCDA", "#E5CDCB"],
+   ];
+   const [a, b] = pal[n % pal.length];
+   return `repeating-linear-gradient(135deg,${a},${a} 12px,${b} 12px,${b} 24px)`;
+ };
++
++/** @deprecated Remove after Tailwind migration completes */
++export const t = {
++  bg: "var(--color-bg)",
++  canvas: "var(--color-canvas)",
++  adminCanvas: "var(--color-admin-canvas)",
++  ink: "var(--color-ink)",
++  cognac: "var(--color-cognac)",
++  cognacDark: "var(--color-cognac-dark)",
++  tan: "var(--color-tan)",
++  card: "var(--color-card)",
++  border: "var(--color-border)",
++  subtle: "var(--color-subtle)",
++  text: "var(--color-text)",
++  text2: "var(--color-text2)",
++  text3: "var(--color-text3)",
++  muted: "var(--color-muted)",
++  muted2: "var(--color-muted2)",
++  green: "var(--color-green)",
++  greenBg: "var(--color-green-bg)",
++  amber: "var(--color-amber)",
++  danger: "var(--color-danger)",
++  displayFont: "var(--font-display)",
++  bodyFont: "var(--font-body)",
++  monoFont: "var(--font-mono)",
++};
+

@@ -1,0 +1,17 @@
+{
+  "name": "@baxparrow/shared",
+  "version": "1.0.0",
+  "type": "module",
+  "main": "src/index.ts",
+  "scripts": {
+    "dev": "tsc -w --noEmit",
+    "build": "tsc",
+    "lint": "echo ok"
+  },
+  "dependencies": {
+    "zod": "^3.23.8"
+  },
+  "devDependencies": {
+    "typescript": "^5.5.4"
+  }
+}

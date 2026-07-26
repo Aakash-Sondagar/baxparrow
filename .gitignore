@@ -1,0 +1,63 @@
+# Dependencies
+node_modules/
+.pnpm-store/
+
+# Build / output
+dist/
+build/
+out/
+.turbo/
+*.tsbuildinfo
+
+# Env & secrets
+.env
+.env.*
+!.env.example
+!.env*.example
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+pnpm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# OS
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# Editors / IDE
+.idea/
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json
+*.swp
+*.swo
+*~
+
+# Test / coverage
+coverage/
+.nyc_output/
+
+# Vite
+apps/web/dist/
+
+# API
+apps/api/dist/
+
+# Uploads / local data
+uploads/
+tmp/
+temp/
+*.local
+
+# Cursor / agent (optional local)
+.cursor/
+.agents/
+
+# Misc
+*.pem
+*.key
+.cache/

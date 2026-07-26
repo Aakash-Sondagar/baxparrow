@@ -1,0 +1,96 @@
+@import "tailwindcss";
+
+:root {
+  --color-bg: #f7f4ef;
+  --color-canvas: #ede8e0;
+  --color-admin-canvas: #f4f1ec;
+  --color-ink: #1c1917;
+  --color-cognac: #a94d28;
+  --color-cognac-dark: #8f3f20;
+  --color-tan: #e8b58c;
+  --color-card: #ffffff;
+  --color-border: #e7e2d9;
+  --color-subtle: #faf7f2;
+  --color-text: #292524;
+  --color-text2: #44403c;
+  --color-text3: #57534e;
+  --color-muted: #78716c;
+  --color-muted2: #a8a29e;
+  --color-green: #3f7d5b;
+  --color-green-bg: #eaf3ed;
+  --color-amber: #b4772a;
+  --color-danger: #b4523a;
+  --font-display: "Archivo", sans-serif;
+  --font-body: "Instrument Sans", system-ui, sans-serif;
+  --font-mono: "Space Mono", monospace;
+}
+
+@theme {
+  --color-bg: #f7f4ef;
+  --color-canvas: #ede8e0;
+  --color-admin-canvas: #f4f1ec;
+  --color-ink: #1c1917;
+  --color-cognac: #a94d28;
+  --color-cognac-dark: #8f3f20;
+  --color-tan: #e8b58c;
+  --color-card: #ffffff;
+  --color-border: #e7e2d9;
+  --color-subtle: #faf7f2;
+  --color-text: #292524;
+  --color-text2: #44403c;
+  --color-text3: #57534e;
+  --color-muted: #78716c;
+  --color-muted2: #a8a29e;
+  --color-green: #3f7d5b;
+  --color-green-bg: #eaf3ed;
+  --color-amber: #b4772a;
+  --color-danger: #b4523a;
+  --font-display: "Archivo", sans-serif;
+  --font-body: "Instrument Sans", system-ui, sans-serif;
+  --font-mono: "Space Mono", monospace;
+}
+
+@layer base {
+  * {
+    box-sizing: border-box;
+  }
+  html,
+  body {
+    margin: 0;
+    padding: 0;
+  }
+  body {
+    font-family: var(--font-body);
+    color: var(--color-ink);
+    background: var(--color-canvas);
+    -webkit-font-smoothing: antialiased;
+  }
+  a {
+    color: var(--color-cognac);
+    text-decoration: none;
+  }
+  a:hover {
+    color: var(--color-cognac-dark);
+  }
+  button,
+  input,
+  textarea,
+  select {
+    font-family: inherit;
+  }
+}
+
+@keyframes bxfade {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@utility animate-bxfade {
+  animation: bxfade 0.3s ease;
+}

@@ -1,0 +1,296 @@
+import { useEffect, useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
+import { tile } from "../../styles/tokens";
+import { useProducts } from "../../features/products/hooks";
+import { ProductCard } from "../../components/ProductCard";
+import { api } from "../../lib/api";
+
+const TRUST = [
+  ["Made in Mumbai", "Own manufacturing unit"],
+  ["1-year warranty", "On all bags"],
+  ["Free shipping", "On orders over ₹999"],
+  ["7-day returns", "No questions asked"],
+];
+
+type Slide = {
+  eyebrow?: string;
+  title: string;
+  subtitle: string;
+  ctaLabel: string;
+  ctaHref: string;
+  secondaryCtaLabel?: string;
+  secondaryCtaHref?: string;
+  secondaryCtaEnabled?: boolean;
+  imageUrl?: string;
+};
+
+type CatTile = {
+  name: string;
+  tag?: string;
+  subtitle?: string;
+  imageUrl?: string;
+  categoryFilter?: string;
+};
+
+type PublicSettings = {
+  carousel: Slide[];
+  bestsellersEnabled: boolean;
+  bestsellersTitle: string;
+  bestsellersLinkLabel: string;
+  bestsellersLinkHref: string;
+  bestsellersLimit: number;
+  homeCategoriesEnabled: boolean;
+  homeCategoriesTitle: string;
+  homeCategoriesLinkLabel: string;
+  homeCategoriesLinkHref: string;
+  homeCategories: CatTile[];
+};
+
+const FALLBACK: Slide[] = [
+  {
+    eyebrow: "EST. MUMBAI · SINCE 2019",
+    title: "Carry with confidence.",
+    subtitle:
+      "Handcrafted school, office, travel & leather bags — made in India, built to last. Shop retail or order in bulk for your team.",
+    ctaLabel: "Shop the collection",
+    ctaHref: "/shop",
+    secondaryCtaLabel: "Wholesale enquiry",
+    secondaryCtaHref: "/contact",
+    secondaryCtaEnabled: true,
+  },
+];
+
+const FALLBACK_CATS: CatTile[] = [
+  { name: "School Bags", tag: "SCHOOL", subtitle: "128 styles", categoryFilter: "School Bags" },
+  { name: "Office Bags", tag: "OFFICE", subtitle: "96 styles", categoryFilter: "Office Bags" },
+  { name: "Handbags", tag: "HANDBAG", subtitle: "142 styles", categoryFilter: "Handbags" },
+  { name: "Leather Bags", tag: "LEATHER", subtitle: "74 styles", categoryFilter: "Leather Bags" },
+  { name: "Sport Bags", tag: "SPORT", subtitle: "88 styles", categoryFilter: "Sport Bags" },
+  { name: "Suitcases", tag: "LUGGAGE", subtitle: "61 styles", categoryFilter: "Suitcases" },
+  { name: "Beach Bags", tag: "BEACH", subtitle: "43 styles", categoryFilter: "Beach Bags" },
+  { name: "Travel Bags", tag: "TRAVEL", subtitle: "110 styles", categoryFilter: "Travel Bags" },
+];
+
+export default function Home() {
+  const nav = useNavigate();
+  const { data: settings } = useQuery({
+    queryKey: ["public-settings"],
+    queryFn: async () => (await api.get("/settings")).data as PublicSettings,
+    staleTime: 60_000,
+  });
+
+  const bestsellersOn = settings?.bestsellersEnabled !== false;
+  const bestsellersLimit = settings?.bestsellersLimit ?? 8;
+  const { data } = useProducts(
+    { limit: String(bestsellersLimit) },
+    { enabled: bestsellersOn }
+  );
+
+  const slides = (settings?.carousel?.length ? settings.carousel : FALLBACK) as Slide[];
+  const [idx, setIdx] = useState(0);
+  const slide = slides[Math.min(idx, slides.length - 1)] ?? FALLBACK[0];
+
+  useEffect(() => {
+    if (slides.length <= 1) return;
+    const t = setInterval(() => setIdx((i) => (i + 1) % slides.length), 6000);
+    return () => clearInterval(t);
+  }, [slides.length]);
+
+  useEffect(() => {
+    setIdx(0);
+  }, [slides.length]);
+
+  const showSecondary = slide.secondaryCtaEnabled !== false;
+  const secondaryLabel = slide.secondaryCtaLabel || "Wholesale enquiry";
+  const secondaryHref = slide.secondaryCtaHref || "/contact";
+
+  const catsOn = settings?.homeCategoriesEnabled !== false;
+  const catTiles =
+    settings?.homeCategories?.length ? settings.homeCategories : FALLBACK_CATS;
+
+  return (
+    <div className="mx-auto max-w-[1240px] px-7 py-6">
+      <div className="relative flex min-h-[440px] overflow-hidden rounded-[20px] bg-[linear-gradient(120deg,#241E19,#3A2D23)] text-bg">
+        <div className="flex max-w-[560px] flex-1 flex-col justify-center px-14 py-16">
+          {(() => {
+            const eyebrow =
+              slide.eyebrow === undefined || slide.eyebrow === null
+                ? "EST. MUMBAI · SINCE 2019"
+                : slide.eyebrow;
+            return eyebrow ? (
+              <span className="mb-[18px] font-mono text-xs tracking-[.2em] text-tan">{eyebrow}</span>
+            ) : null;
+          })()}
+          <h1 className="m-0 mb-5 font-display text-[56px] font-extrabold leading-[1.02] tracking-[-.03em]">
+            {slide.title}
+          </h1>
+          {slide.subtitle && (
+            <p className="m-0 mb-8 text-[17px] leading-[1.6] text-[#D8CFC5]">{slide.subtitle}</p>
+          )}
+          <div className="flex gap-3.5">
+            <button
+              onClick={() => nav(slide.ctaHref || "/shop")}
+              className="cursor-pointer rounded-[11px] border-none bg-tan px-7 py-[15px] text-[15px] font-bold text-ink"
+            >
+              {slide.ctaLabel || "Shop now"}
+            </button>
+            {showSecondary && (
+              <button
+                onClick={() => nav(secondaryHref)}
+                className="cursor-pointer rounded-[11px] border border-[rgba(247,244,239,.35)] bg-transparent px-[26px] py-[15px] text-[15px] font-semibold text-bg"
+              >
+                {secondaryLabel}
+              </button>
+            )}
+          </div>
+          {slides.length > 1 && (
+            <div className="mt-8 flex gap-2">
+              {slides.map((_, i) => (
+                <button
+                  key={i}
+                  type="button"
+                  aria-label={`Slide ${i + 1}`}
+                  onClick={() => setIdx(i)}
+                  className={`h-2 cursor-pointer rounded-full border-0 transition-all ${
+                    i === idx ? "w-7 bg-tan" : "w-2 bg-[rgba(247,244,239,.35)]"
+                  }`}
+                />
+              ))}
+            </div>
+          )}
+        </div>
+        <div
+          className="grid flex-1 place-items-center bg-[repeating-linear-gradient(135deg,#4A3A2D,#4A3A2D_14px,#43342825_14px,#433428_28px)] bg-cover bg-center"
+          style={
+            slide.imageUrl
+              ? { backgroundImage: `url(${slide.imageUrl})`, backgroundSize: "cover" }
+              : undefined
+          }
+        >
+          {!slide.imageUrl && (
+            <span className="font-mono text-xs text-[#C9B39E]">[ hero bag lifestyle shot ]</span>
+          )}
+        </div>
+      </div>
+      <div className="mt-4 grid grid-cols-4 gap-4">
+        {TRUST.map(([title, sub]) => (
+          <div key={title} className="rounded-[13px] border border-border bg-card px-5 py-[18px]">
+            <div className="font-display text-[15px] font-bold">{title}</div>
+            <div className="mt-[3px] text-[12.5px] text-muted">{sub}</div>
+          </div>
+        ))}
+      </div>
+      {catsOn && (
+        <section className="px-0 pt-9 pb-2">
+          <div className="mb-5 flex items-baseline justify-between">
+            <h2 className="m-0 font-display text-[26px] font-bold tracking-[-.02em]">
+              {settings?.homeCategoriesTitle || "Shop by category"}
+            </h2>
+            <Link
+              to={settings?.homeCategoriesLinkHref || "/shop"}
+              className="text-sm font-semibold"
+            >
+              {settings?.homeCategoriesLinkLabel || "View all →"}
+            </Link>
+          </div>
+          <div className="grid grid-cols-4 gap-3.5">
+            {catTiles.map((c, i) => {
+              const filter = c.categoryFilter || c.name;
+              return (
+                <button
+                  key={`${c.name}-${i}`}
+                  onClick={() => nav(`/shop?category=${encodeURIComponent(filter)}`)}
+                  className="relative flex aspect-[1/0.82] cursor-pointer flex-col justify-end overflow-hidden rounded-[15px] border border-border p-4 text-left"
+                  style={
+                    c.imageUrl
+                      ? {
+                          backgroundImage: `linear-gradient(to top, rgba(0,0,0,.45), transparent 55%), url(${c.imageUrl})`,
+                          backgroundSize: "cover",
+                          backgroundPosition: "center",
+                        }
+                      : { background: tile(i) }
+                  }
+                >
+                  {c.tag && (
+                    <span
+                      className={`absolute top-3 left-[14px] font-mono text-[10px] ${
+                        c.imageUrl ? "text-white/80" : "text-[#9C8B7A]"
+                      }`}
+                    >
+                      [ {c.tag} ]
+                    </span>
+                  )}
+                  <span
+                    className={`font-display text-base font-bold ${
+                      c.imageUrl ? "text-white" : "text-[#26201B]"
+                    }`}
+                  >
+                    {c.name}
+                  </span>
+                  {c.subtitle && (
+                    <span className={`text-xs ${c.imageUrl ? "text-white/80" : "text-[#6E655C]"}`}>
+                      {c.subtitle}
+                    </span>
+                  )}
+                </button>
+              );
+            })}
+          </div>
+        </section>
+      )}
+      {bestsellersOn && (
+        <section className="py-9">
+          <div className="mb-5 flex items-baseline justify-between">
+            <h2 className="m-0 font-display text-[26px] font-bold tracking-[-.02em]">
+              {settings?.bestsellersTitle || "Bestsellers this week"}
+            </h2>
+            <Link
+              to={settings?.bestsellersLinkHref || "/shop"}
+              className="text-sm font-semibold"
+            >
+              {settings?.bestsellersLinkLabel || "Shop all →"}
+            </Link>
+          </div>
+          <div className="grid grid-cols-4 gap-[18px]">
+            {(data?.items ?? []).map((p, i) => (
+              <ProductCard key={p._id} p={p} index={i} />
+            ))}
+          </div>
+        </section>
+      )}
+      <section className="mb-10">
+        <div className="flex items-center gap-10 rounded-[20px] bg-ink px-[52px] py-12 text-bg">
+          <div className="flex-1">
+            <span className="font-mono text-xs tracking-[.18em] text-tan">B2B / WHOLESALE</span>
+            <h2 className="my-3 font-display text-[34px] font-extrabold tracking-[-.02em]">
+              Kitting out a school, office or store?
+            </h2>
+            <p className="m-0 mb-6 max-w-[520px] text-base text-[#CDC4BA]">
+              Custom branding, tiered pricing from MOQ 50, and dedicated dispatch. Get a quote within 24
+              hours.
+            </p>
+            <button
+              onClick={() => nav("/contact")}
+              className="cursor-pointer rounded-[11px] border-none bg-tan px-[26px] py-[14px] text-[15px] font-bold text-ink"
+            >
+              Request bulk quote
+            </button>
+          </div>
+          <div className="grid grid-cols-[repeat(3,auto)] gap-[34px]">
+            {[
+              ["1000+", "styles in stock"],
+              ["MOQ 50", "for custom orders"],
+              ["24h", "quote turnaround"],
+            ].map(([n, l]) => (
+              <div key={l}>
+                <div className="font-display text-[32px] font-extrabold text-tan">{n}</div>
+                <div className="text-[13px] text-[#CDC4BA]">{l}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+    </div>
+  );
+}

@@ -1,0 +1,47 @@
+* {
+    box-sizing: border-box
+}
+
+html,
+body {
+    margin: 0;
+    padding: 0
+}
+
+body {
+    font-family: 'Instrument Sans', system-ui, sans-serif;
+    color: #1C1917;
+    background: #EDE8E0;
+    -webkit-font-smoothing: antialiased
+}
+
+a {
+    color: #A94D28;
+    text-decoration: none
+}
+
+a:hover {
+    color: #8F3F20
+}
+
+button {
+    font-family: inherit
+}
+
+input,
+textarea,
+select {
+    font-family: inherit
+}
+
+@keyframes bxfade {
+    from {
+        opacity: 0;
+        transform: translateY(6px)
+    }
+
+    to {
+        opacity: 1;
+        transform: none
+    }
+}
