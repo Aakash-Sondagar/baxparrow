@@ -50,16 +50,16 @@ export default function Checkout() {
   };
 
   return (
-    <section className="mx-auto max-w-[1100px] px-7 pt-7 pb-[60px]">
-      <h1 className="m-0 mb-6 font-display text-[32px] font-extrabold tracking-[-.02em]">
+    <section className="mx-auto max-w-[1100px] px-4 pt-7 pb-[60px] sm:px-7">
+      <h1 className="m-0 mb-6 font-display text-[28px] font-extrabold tracking-[-.02em] sm:text-[32px]">
         Checkout
       </h1>
-      <div className="grid grid-cols-[1fr_360px] items-start gap-7">
+      <div className="grid grid-cols-1 items-start gap-7 lg:grid-cols-[1fr_360px]">
         <div className="flex flex-col gap-5">
-          <div className="rounded-[15px] border border-border bg-card p-6">
+          <div className="rounded-[15px] border border-border bg-card p-4 sm:p-6">
             <div className="mb-[18px] font-display text-[17px] font-bold">Contact &amp; delivery</div>
-            <div className="grid grid-cols-2 gap-3.5">
-              <div className="col-span-2">
+            <div className="grid grid-cols-1 gap-3.5 sm:grid-cols-2">
+              <div className="sm:col-span-2">
                 <label className={label}>Email</label>
                 <input
                   value={form.email}
@@ -76,7 +76,7 @@ export default function Checkout() {
                 <label className={label}>Last name</label>
                 <input value={form.lastName} onChange={set("lastName")} className={field} />
               </div>
-              <div className="col-span-2">
+              <div className="sm:col-span-2">
                 <label className={label}>Address</label>
                 <input
                   value={form.address}
@@ -100,19 +100,19 @@ export default function Checkout() {
               </div>
             </div>
           </div>
-          <div className="rounded-[15px] border border-border bg-card p-6">
-            <div className="mb-4 flex items-center justify-between">
+          <div className="rounded-[15px] border border-border bg-card p-4 sm:p-6">
+            <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
               <div className="font-display text-[17px] font-bold">Payment</div>
               <span className="font-mono text-xs text-green">🔒 Secured by Razorpay</span>
             </div>
-            <div className="flex items-center gap-3 rounded-[11px] border-2 border-cognac bg-[#FBF2EB] px-4 py-3.5">
-              <span className="h-[18px] w-[18px] rounded-full border-[5px] border-cognac" />
+            <div className="flex flex-wrap items-center gap-2 rounded-[11px] border-2 border-cognac bg-[#FBF2EB] px-4 py-3.5 sm:gap-3">
+              <span className="h-[18px] w-[18px] shrink-0 rounded-full border-[5px] border-cognac" />
               <span className="font-semibold">UPI · Cards · Netbanking</span>
               <span className="text-[13px] text-muted">via Razorpay Checkout</span>
             </div>
           </div>
         </div>
-        <div className="sticky top-[112px] rounded-[15px] border border-border bg-card p-6">
+        <div className="sticky bottom-0 z-10 rounded-[15px] border border-border bg-card p-5 sm:p-6 lg:top-[112px] lg:bottom-auto">
           <div className="mb-4 font-display text-lg font-bold">{count} items</div>
           <div className="mb-4 flex max-h-[220px] flex-col gap-3 overflow-auto">
             {items.map((l) => (
@@ -125,15 +125,15 @@ export default function Checkout() {
                     style={{ background: tile(l.toneIndex) }}
                   />
                 )}
-                <div className="flex-1 text-[13px]">
-                  <div className="font-semibold">{l.name}</div>
+                <div className="min-w-0 flex-1 text-[13px]">
+                  <div className="truncate font-semibold">{l.name}</div>
                   <div className="text-muted2">
                     Qty {l.qty}
                     {l.color ? ` · ${l.color}` : ""}
                     {l.size ? ` · ${l.size}` : ""}
                   </div>
                 </div>
-                <div className="font-body text-[13px] tabular-nums">{inr(l.lineTotal)}</div>
+                <div className="shrink-0 font-body text-[13px] tabular-nums">{inr(l.lineTotal)}</div>
               </div>
             ))}
           </div>

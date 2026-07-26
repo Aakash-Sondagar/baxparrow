@@ -15,10 +15,10 @@ export default function Track() {
     ? data.timeline.map((s: any, i: number) => [s.status, new Date(s.at).toLocaleString(), s.note, i === data.timeline.length - 1 ? "active" : "done"])
     : FALLBACK;
   return (
-    <section className="mx-auto max-w-[760px] px-7 pt-8 pb-[70px]">
-      <h1 className="m-0 mb-1 font-display text-[30px] font-extrabold tracking-[-.02em]">Track your order</h1>
-      <p className="m-0 mb-[26px] font-mono text-sm text-cognac">Order #{no}{data?.order?.shipment?.awb ? " · AWB " + data.order.shipment.awb : ""}</p>
-      <div className="rounded-[15px] border border-border bg-card p-8">
+    <section className="mx-auto max-w-[760px] px-4 pt-8 pb-[70px] sm:px-7">
+      <h1 className="m-0 mb-1 font-display text-[26px] font-extrabold tracking-[-.02em] sm:text-[30px]">Track your order</h1>
+      <p className="m-0 mb-[26px] break-all font-mono text-sm text-cognac">Order #{no}{data?.order?.shipment?.awb ? " · AWB " + data.order.shipment.awb : ""}</p>
+      <div className="rounded-[15px] border border-border bg-card p-5 sm:p-8">
         {live.map(([title, time, note, state]: any, i: number) => {
           const dotClass = state === "pend" ? "bg-[#D6CFC4]" : state === "active" ? "bg-cognac" : "bg-green";
           return <div key={i} className="flex gap-4">

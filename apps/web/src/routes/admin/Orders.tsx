@@ -18,11 +18,11 @@ export default function Orders() {
   const advance = useUpdateOrderStatus();
   return (
     <>
-      <div className="mb-[18px] flex gap-2">
-        {["All","Pending","Processing","Shipped","Delivered"].map(x => <button key={x} onClick={() => setTab(x)} className={`cursor-pointer rounded-[9px] border px-4 py-2 text-[13px] font-semibold ${tab === x ? "border-ink bg-ink text-white" : "border-border bg-card text-text3"}`}>{x}</button>)}
+      <div className="mb-[18px] flex gap-2 overflow-x-auto pb-1">
+        {["All","Pending","Processing","Shipped","Delivered"].map(x => <button key={x} onClick={() => setTab(x)} className={`shrink-0 cursor-pointer rounded-[9px] border px-4 py-2 text-[13px] font-semibold ${tab === x ? "border-ink bg-ink text-white" : "border-border bg-card text-text3"}`}>{x}</button>)}
       </div>
-      <div className="overflow-hidden rounded-[14px] border border-border bg-card">
-        <table className="w-full border-collapse text-[13.5px]">
+      <div className="overflow-x-auto rounded-[14px] border border-border bg-card">
+        <table className="w-full min-w-[720px] border-collapse text-[13.5px]">
           <thead><tr className="bg-[#FBFAF7] text-left font-mono text-[11px] text-muted2">{["ORDER","CUSTOMER","ITEMS","TOTAL","PAYMENT","STATUS",""].map(h => <th key={h} className="px-[22px] py-[13px] font-normal">{h}</th>)}</tr></thead>
           <tbody>
             {isLoading && <tr><td colSpan={7} className="p-6 text-center text-muted">Loading…</td></tr>}

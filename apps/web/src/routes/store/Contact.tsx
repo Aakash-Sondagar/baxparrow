@@ -29,9 +29,9 @@ const DETAILS = [
 
 export default function Contact() {
   return (
-    <section className="mx-auto max-w-[840px] px-7 pt-10 pb-[60px]">
+    <section className="mx-auto max-w-[840px] px-4 pt-10 pb-[60px] sm:px-7">
       <div className="mb-2 font-mono text-[13px] text-muted2">Home / Contact</div>
-      <h1 className="m-0 mb-2 font-display text-[34px] font-extrabold tracking-[-.02em]">
+      <h1 className="m-0 mb-2 font-display text-[28px] font-extrabold tracking-[-.02em] sm:text-[34px]">
         Wholesale &amp; contact
       </h1>
       <p className="m-0 mb-8 max-w-[540px] text-[15px] leading-relaxed text-muted">
