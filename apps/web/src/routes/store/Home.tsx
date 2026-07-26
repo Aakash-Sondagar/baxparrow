@@ -110,25 +110,29 @@ export default function Home() {
     settings?.homeCategories?.length ? settings.homeCategories : FALLBACK_CATS;
 
   return (
-    <div className="mx-auto max-w-[1240px] px-7 py-6">
-      <div className="relative flex min-h-[440px] overflow-hidden rounded-[20px] bg-[linear-gradient(120deg,#241E19,#3A2D23)] text-bg">
-        <div className="flex max-w-[560px] flex-1 flex-col justify-center px-14 py-16">
+    <div className="mx-auto max-w-[1240px] px-4 py-4 sm:px-7 sm:py-6">
+      <div className="relative flex min-h-[360px] flex-col overflow-hidden rounded-[20px] bg-[linear-gradient(120deg,#241E19,#3A2D23)] text-bg sm:min-h-[400px] md:min-h-[440px] md:flex-row">
+        <div className="flex max-w-[560px] flex-1 flex-col justify-center px-6 py-10 sm:px-10 sm:py-14 md:px-14 md:py-16">
           {(() => {
             const eyebrow =
               slide.eyebrow === undefined || slide.eyebrow === null
                 ? "EST. MUMBAI · SINCE 2019"
                 : slide.eyebrow;
             return eyebrow ? (
-              <span className="mb-[18px] font-mono text-xs tracking-[.2em] text-tan">{eyebrow}</span>
+              <span className="mb-[18px] font-mono text-[10px] tracking-[.2em] text-tan sm:text-xs">
+                {eyebrow}
+              </span>
             ) : null;
           })()}
-          <h1 className="m-0 mb-5 font-display text-[56px] font-extrabold leading-[1.02] tracking-[-.03em]">
+          <h1 className="m-0 mb-4 font-display text-[36px] font-extrabold leading-[1.02] tracking-[-.03em] sm:mb-5 sm:text-[44px] md:text-[56px]">
             {slide.title}
           </h1>
           {slide.subtitle && (
-            <p className="m-0 mb-8 text-[17px] leading-[1.6] text-[#D8CFC5]">{slide.subtitle}</p>
+            <p className="m-0 mb-6 text-[15px] leading-[1.6] text-[#D8CFC5] sm:mb-8 sm:text-[17px]">
+              {slide.subtitle}
+            </p>
           )}
-          <div className="flex gap-3.5">
+          <div className="flex flex-col gap-3 sm:flex-row sm:gap-3.5">
             <button
               onClick={() => nav(slide.ctaHref || "/shop")}
               className="cursor-pointer rounded-[11px] border-none bg-tan px-7 py-[15px] text-[15px] font-bold text-ink"
@@ -161,7 +165,7 @@ export default function Home() {
           )}
         </div>
         <div
-          className="grid flex-1 place-items-center bg-[repeating-linear-gradient(135deg,#4A3A2D,#4A3A2D_14px,#43342825_14px,#433428_28px)] bg-cover bg-center"
+          className="hidden min-h-[200px] flex-1 bg-[repeating-linear-gradient(135deg,#4A3A2D,#4A3A2D_14px,#43342825_14px,#433428_28px)] bg-cover bg-center sm:grid sm:place-items-center md:min-h-0"
           style={
             slide.imageUrl
               ? { backgroundImage: `url(${slide.imageUrl})`, backgroundSize: "cover" }
@@ -173,28 +177,28 @@ export default function Home() {
           )}
         </div>
       </div>
-      <div className="mt-4 grid grid-cols-4 gap-4">
+      <div className="mt-4 grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-4">
         {TRUST.map(([title, sub]) => (
-          <div key={title} className="rounded-[13px] border border-border bg-card px-5 py-[18px]">
-            <div className="font-display text-[15px] font-bold">{title}</div>
-            <div className="mt-[3px] text-[12.5px] text-muted">{sub}</div>
+          <div key={title} className="rounded-[13px] border border-border bg-card px-4 py-3.5 sm:px-5 sm:py-[18px]">
+            <div className="font-display text-[14px] font-bold sm:text-[15px]">{title}</div>
+            <div className="mt-[3px] text-[12px] text-muted sm:text-[12.5px]">{sub}</div>
           </div>
         ))}
       </div>
       {catsOn && (
         <section className="px-0 pt-9 pb-2">
-          <div className="mb-5 flex items-baseline justify-between">
-            <h2 className="m-0 font-display text-[26px] font-bold tracking-[-.02em]">
+          <div className="mb-5 flex items-baseline justify-between gap-3">
+            <h2 className="m-0 font-display text-[22px] font-bold tracking-[-.02em] sm:text-[26px]">
               {settings?.homeCategoriesTitle || "Shop by category"}
             </h2>
             <Link
               to={settings?.homeCategoriesLinkHref || "/shop"}
-              className="text-sm font-semibold"
+              className="shrink-0 text-sm font-semibold"
             >
               {settings?.homeCategoriesLinkLabel || "View all →"}
             </Link>
           </div>
-          <div className="grid grid-cols-4 gap-3.5">
+          <div className="grid grid-cols-2 gap-3 sm:gap-3.5 md:grid-cols-3 lg:grid-cols-4">
             {catTiles.map((c, i) => {
               const filter = c.categoryFilter || c.name;
               return (
@@ -241,18 +245,18 @@ export default function Home() {
       )}
       {bestsellersOn && (
         <section className="py-9">
-          <div className="mb-5 flex items-baseline justify-between">
-            <h2 className="m-0 font-display text-[26px] font-bold tracking-[-.02em]">
+          <div className="mb-5 flex items-baseline justify-between gap-3">
+            <h2 className="m-0 font-display text-[22px] font-bold tracking-[-.02em] sm:text-[26px]">
               {settings?.bestsellersTitle || "Bestsellers this week"}
             </h2>
             <Link
               to={settings?.bestsellersLinkHref || "/shop"}
-              className="text-sm font-semibold"
+              className="shrink-0 text-sm font-semibold"
             >
               {settings?.bestsellersLinkLabel || "Shop all →"}
             </Link>
           </div>
-          <div className="grid grid-cols-4 gap-[18px]">
+          <div className="grid grid-cols-2 gap-3 sm:gap-[18px] md:grid-cols-3 lg:grid-cols-4">
             {(data?.items ?? []).map((p, i) => (
               <ProductCard key={p._id} p={p} index={i} />
             ))}
@@ -260,13 +264,13 @@ export default function Home() {
         </section>
       )}
       <section className="mb-10">
-        <div className="flex items-center gap-10 rounded-[20px] bg-ink px-[52px] py-12 text-bg">
+        <div className="flex flex-col items-stretch gap-8 rounded-[20px] bg-ink px-6 py-10 text-bg sm:px-10 sm:py-12 md:flex-row md:items-center md:gap-10 md:px-[52px]">
           <div className="flex-1">
             <span className="font-mono text-xs tracking-[.18em] text-tan">B2B / WHOLESALE</span>
-            <h2 className="my-3 font-display text-[34px] font-extrabold tracking-[-.02em]">
+            <h2 className="my-3 font-display text-[26px] font-extrabold tracking-[-.02em] sm:text-[34px]">
               Kitting out a school, office or store?
             </h2>
-            <p className="m-0 mb-6 max-w-[520px] text-base text-[#CDC4BA]">
+            <p className="m-0 mb-6 max-w-[520px] text-[15px] text-[#CDC4BA] sm:text-base">
               Custom branding, tiered pricing from MOQ 50, and dedicated dispatch. Get a quote within 24
               hours.
             </p>
@@ -277,15 +281,15 @@ export default function Home() {
               Request bulk quote
             </button>
           </div>
-          <div className="grid grid-cols-[repeat(3,auto)] gap-[34px]">
+          <div className="grid grid-cols-3 gap-4 sm:gap-[34px]">
             {[
               ["1000+", "styles in stock"],
               ["MOQ 50", "for custom orders"],
               ["24h", "quote turnaround"],
             ].map(([n, l]) => (
               <div key={l}>
-                <div className="font-display text-[32px] font-extrabold text-tan">{n}</div>
-                <div className="text-[13px] text-[#CDC4BA]">{l}</div>
+                <div className="font-display text-[24px] font-extrabold text-tan sm:text-[32px]">{n}</div>
+                <div className="text-[12px] text-[#CDC4BA] sm:text-[13px]">{l}</div>
               </div>
             ))}
           </div>
