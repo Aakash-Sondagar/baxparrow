@@ -26,17 +26,19 @@ export default function Search() {
   };
 
   return (
-    <section className="mx-auto max-w-[1240px] px-7 pt-7 pb-[60px]">
-      <div className="mb-2 flex max-w-[640px] items-center gap-3 rounded-[14px] border border-border bg-card py-1.5 pr-2 pl-[18px]">
-        <SearchIcon size={20} className="text-muted2" />
-        <input
-          value={q}
-          onChange={(e) => setQ(e.target.value)}
-          onKeyDown={(e) => e.key === "Enter" && run(q)}
-          placeholder="Search bags, SKU, category…"
-          autoFocus
-          className="flex-1 border-none bg-transparent px-0 py-2.5 text-base outline-none"
-        />
+    <section className="mx-auto max-w-[1240px] px-4 pt-7 pb-[60px] sm:px-7">
+      <div className="mb-2 flex max-w-[640px] flex-col gap-2 rounded-[14px] border border-border bg-card py-1.5 pr-2 pl-3 sm:flex-row sm:items-center sm:gap-3 sm:pl-[18px]">
+        <div className="flex min-w-0 flex-1 items-center gap-3">
+          <SearchIcon size={20} className="shrink-0 text-muted2" />
+          <input
+            value={q}
+            onChange={(e) => setQ(e.target.value)}
+            onKeyDown={(e) => e.key === "Enter" && run(q)}
+            placeholder="Search bags, SKU, category…"
+            autoFocus
+            className="min-w-0 flex-1 border-none bg-transparent px-0 py-2.5 text-base outline-none"
+          />
+        </div>
         <button
           type="button"
           onClick={() => run(q)}
@@ -53,7 +55,7 @@ export default function Search() {
       ) : (
         <p className="m-0 mb-[22px] text-muted">Type a term and press Search.</p>
       )}
-      <div className="grid grid-cols-4 gap-[18px]">
+      <div className="grid grid-cols-2 gap-3 sm:gap-[18px] md:grid-cols-3 lg:grid-cols-4">
         {term
           ? (data?.items ?? []).map((p, i) => <ProductCard key={p._id} p={p} index={i} />)
           : null}
