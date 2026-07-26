@@ -29,20 +29,20 @@ export default function Product() {
     });
 
   return (
-    <section className="mx-auto max-w-[1240px] px-7 pt-6 pb-[60px]">
+    <section className="mx-auto max-w-[1240px] px-4 pt-6 pb-[60px] sm:px-7">
       <div className="mb-4 font-mono text-[13px] text-muted2">
         {p.category} / {p.name}
       </div>
-      <div className="grid grid-cols-[1.1fr_1fr] items-start gap-11">
-        <div className="flex gap-3">
+      <div className="grid grid-cols-1 items-start gap-8 lg:grid-cols-[1.1fr_1fr] lg:gap-11">
+        <div className="flex flex-col-reverse gap-3 sm:flex-row">
           {images.length > 1 && (
-            <div className="flex flex-col gap-2.5">
+            <div className="flex flex-row gap-2.5 overflow-x-auto sm:flex-col">
               {images.map((src, i) => (
                 <button
                   key={src + i}
                   type="button"
                   onClick={() => setImgIdx(i)}
-                  className={`h-16 w-16 overflow-hidden rounded-[10px] border-2 p-0 ${
+                  className={`h-14 w-14 shrink-0 overflow-hidden rounded-[10px] border-2 p-0 sm:h-16 sm:w-16 ${
                     i === imgIdx ? "border-cognac" : "border-border"
                   }`}
                 >
@@ -52,7 +52,7 @@ export default function Product() {
             </div>
           )}
           <div
-            className="relative flex-1 grid aspect-[1/1.05] place-items-center overflow-hidden rounded-[18px] border border-border"
+            className="relative grid aspect-[1/1.05] flex-1 place-items-center overflow-hidden rounded-[18px] border border-border"
             style={!main ? { background: tile(0) } : undefined}
           >
             {main ? (
@@ -66,7 +66,7 @@ export default function Product() {
           <div className="font-mono text-xs text-muted2">
             {p.category} · SKU {p.sku}
           </div>
-          <h1 className="mt-2 mb-2.5 font-display text-4xl font-extrabold tracking-[-.02em]">
+          <h1 className="mt-2 mb-2.5 font-display text-[28px] font-extrabold tracking-[-.02em] sm:text-4xl">
             {p.name}
           </h1>
           <div className="mb-2 flex items-baseline gap-3">
@@ -138,7 +138,7 @@ export default function Product() {
               </div>
             </div>
           )}
-          <div className="flex gap-3">
+          <div className="flex flex-col gap-3 sm:flex-row">
             <button
               onClick={addToCart}
               className="flex-1 cursor-pointer rounded-xl border-none bg-ink p-4 text-[15px] font-bold text-bg"
@@ -155,7 +155,7 @@ export default function Product() {
               Buy now
             </button>
           </div>
-          <div className="mt-5 flex gap-6 text-[13px] text-text3">
+          <div className="mt-5 flex flex-col gap-2 text-[13px] text-text3 sm:flex-row sm:flex-wrap sm:gap-x-6 sm:gap-y-1">
             <span>✓ Free shipping over ₹999</span>
             <span>✓ 7-day returns</span>
             <span>✓ 1-year warranty</span>
