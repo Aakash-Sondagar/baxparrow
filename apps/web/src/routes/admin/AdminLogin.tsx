@@ -13,8 +13,8 @@ export default function AdminLogin() {
     catch (e: any) { setErr(e?.response?.data?.error ?? "Login failed"); setBusy(false); }
   };
   return (
-    <div className="grid min-h-screen place-items-center bg-admin-canvas">
-      <form onSubmit={submit} className="w-[360px] rounded-2xl border border-border bg-card p-8">
+    <div className="grid min-h-screen place-items-center bg-admin-canvas px-4">
+      <form onSubmit={submit} className="w-full max-w-[360px] rounded-2xl border border-border bg-card p-6 sm:p-8">
         <div className="mb-5 flex items-center gap-2.5">
           <span className="grid h-[34px] w-[34px] place-items-center rounded-[9px] bg-ink font-display text-lg font-extrabold text-tan">B</span>
           <div><div className="font-display text-lg font-extrabold">Baxparrow</div><div className="font-mono text-[11px] text-muted2">ADMIN SIGN IN</div></div>
