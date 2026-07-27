@@ -1,7 +1,9 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Plus, Trash2 } from "lucide-react";
 import { api } from "../../lib/api";
+import { ImageField } from "../../components/ImageField";
+import { uploadImage } from "../../lib/cloudinary";
 
 type Slide = {
   _id?: string;
@@ -320,15 +322,10 @@ export default function UiSettings() {
                     disabled={!slide.secondaryCtaEnabled}
                   />
                 </div>
-                <div className="sm:col-span-2">
-                  <label className={label}>Image URL (optional)</label>
-                  <input
-                    value={slide.imageUrl}
-                    onChange={(e) => updateSlide(i, { imageUrl: e.target.value })}
-                    className={field}
-                    placeholder="https://…"
-                  />
-                </div>
+                <ImageField
+                  value={slide.imageUrl}
+                  onChange={(imageUrl) => updateSlide(i, { imageUrl })}
+                />
               </div>
             </div>
           ))}
@@ -449,15 +446,11 @@ export default function UiSettings() {
                     placeholder="Travel Bags"
                   />
                 </div>
-                <div className="sm:col-span-2">
-                  <label className={label}>Image URL (optional)</label>
-                  <input
-                    value={t.imageUrl}
-                    onChange={(e) => updateCat(i, { imageUrl: e.target.value })}
-                    className={field}
-                    placeholder="https://…"
-                  />
-                </div>
+                <ImageField
+                  value={t.imageUrl}
+                  onChange={(imageUrl) => updateCat(i, { imageUrl })}
+                  disabled={!homeCategoriesEnabled}
+                />
               </div>
             </div>
           ))}
