@@ -7,6 +7,7 @@ import { useAuth } from "../features/auth/AuthContext";
 import { NotificationBell } from "../features/notifications/NotificationBell";
 import { api } from "../lib/api";
 import { SmoothScroll } from "./SmoothScroll";
+import { PageTransition } from "./PageTransition";
 
 const NAV = [
   { label: "Shop All", to: "/shop" },
@@ -109,11 +110,14 @@ export function StoreLayout() {
             <button
               type="button"
               onClick={() => nav("/cart")}
-              className="relative cursor-pointer border-0 bg-transparent p-1 text-ink"
+              className="relative cursor-pointer border-0 bg-transparent p-1 text-ink transition-transform duration-200 hover:scale-105 active:scale-95"
             >
               <ShoppingBag size={20} />
               {count > 0 && (
-                <span className="absolute -top-1.5 -right-2 grid h-[17px] min-w-[17px] place-items-center rounded-lg bg-cognac px-1 font-mono text-[10px] font-bold text-white">
+                <span
+                  key={count}
+                  className="animate-pop absolute -top-1.5 -right-2 grid h-[17px] min-w-[17px] place-items-center rounded-lg bg-cognac px-1 font-mono text-[10px] font-bold text-white"
+                >
                   {count}
                 </span>
               )}
@@ -174,8 +178,10 @@ export function StoreLayout() {
         </nav>
       </div>
 
-      <main className="animate-bxfade">
-        <Outlet />
+      <main>
+        <PageTransition>
+          <Outlet />
+        </PageTransition>
       </main>
       <footer className="mt-5 bg-ink text-[#CDC4BA]">
         <div className="mx-auto grid max-w-[1240px] grid-cols-1 gap-8 px-4 pt-10 pb-8 sm:grid-cols-2 sm:px-7 sm:pt-12 lg:grid-cols-[1.6fr_1fr_1fr_1fr] lg:gap-9">

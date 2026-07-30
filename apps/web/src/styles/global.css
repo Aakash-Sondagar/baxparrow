@@ -23,6 +23,8 @@
   --font-display: "Archivo", sans-serif;
   --font-body: "Instrument Sans", system-ui, sans-serif;
   --font-mono: "Space Mono", monospace;
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-soft: cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 @theme {
@@ -68,6 +70,7 @@
   a {
     color: var(--color-cognac);
     text-decoration: none;
+    transition: color 0.2s var(--ease-soft);
   }
   a:hover {
     color: var(--color-cognac-dark);
@@ -80,10 +83,10 @@
   }
 }
 
-@keyframes bxfade {
+@keyframes bx-page-in {
   from {
     opacity: 0;
-    transform: translateY(6px);
+    transform: translateY(12px);
   }
   to {
     opacity: 1;
@@ -91,6 +94,105 @@
   }
 }
 
+@keyframes bx-fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(18px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes bx-fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes bx-scale-in {
+  from {
+    opacity: 0;
+    transform: scale(0.92);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes bx-pop {
+  0% {
+    transform: scale(0.6);
+  }
+  70% {
+    transform: scale(1.15);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
 @utility animate-bxfade {
-  animation: bxfade 0.3s ease;
+  animation: bx-page-in 0.45s var(--ease-out) both;
+}
+
+@utility animate-page {
+  animation: bx-page-in 0.42s var(--ease-out) both;
+}
+
+@utility animate-fade-up {
+  animation: bx-fade-up 0.55s var(--ease-out) both;
+}
+
+@utility animate-fade-in {
+  animation: bx-fade-in 0.4s var(--ease-soft) both;
+}
+
+@utility animate-pop {
+  animation: bx-pop 0.35s var(--ease-out) both;
+}
+
+@utility bx-reveal {
+  opacity: 0;
+  transform: translateY(22px);
+  transition:
+    opacity 0.65s var(--ease-out),
+    transform 0.65s var(--ease-out);
+}
+
+@utility bx-reveal-in {
+  opacity: 1;
+  transform: none;
+}
+
+@utility bx-stagger-1 {
+  transition-delay: 60ms;
+}
+@utility bx-stagger-2 {
+  transition-delay: 120ms;
+}
+@utility bx-stagger-3 {
+  transition-delay: 180ms;
+}
+@utility bx-stagger-4 {
+  transition-delay: 240ms;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+  .bx-reveal {
+    opacity: 1;
+    transform: none;
+  }
 }
