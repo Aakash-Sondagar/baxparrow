@@ -18,4 +18,6 @@ app.use(cookieParser());
 app.get("/health", (_req, res) => res.json({ ok: true }));
 app.use("/api/v1", routes);
 app.use(errorHandler);
-connectDB().then(() => app.listen(env.port, () => console.log("[api] :" + env.port)));
+connectDB().then(() =>
+  app.listen(env.port, "0.0.0.0", () => console.log("[api] :" + env.port))
+);
