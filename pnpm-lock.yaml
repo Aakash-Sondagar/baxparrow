@@ -61,6 +61,9 @@ importers:
       razorpay:
         specifier: ^2.9.4
         version: 2.9.8
+      tsx:
+        specifier: ^4.16.2
+        version: 4.23.1
       zod:
         specifier: ^3.23.8
         version: 3.25.76
@@ -86,9 +89,6 @@ importers:
       '@types/node':
         specifier: ^20.14.10
         version: 20.19.43
-      tsx:
-        specifier: ^4.16.2
-        version: 4.23.1
       typescript:
         specifier: ^5.5.4
         version: 5.9.3
