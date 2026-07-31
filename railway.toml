@@ -1,0 +1,12 @@
+# Railway — API service (monorepo root = /)
+# In dashboard: Root Directory empty (/). Or set these Build/Start overrides.
+
+[build]
+builder = "NIXPACKS"
+buildCommand = "pnpm install --frozen-lockfile"
+
+[deploy]
+startCommand = "pnpm --filter @baxparrow/api start"
+healthcheckPath = "/health"
+healthcheckTimeout = 30
+restartPolicyType = "ON_FAILURE"

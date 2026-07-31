@@ -5,6 +5,8 @@
   "scripts": {
     "dev": "pnpm -r --parallel dev",
     "build": "pnpm -r build",
+    "build:api": "pnpm --filter @baxparrow/api... build",
+    "start:api": "pnpm --filter @baxparrow/api start",
     "lint": "pnpm -r lint",
     "seed": "pnpm --filter @baxparrow/api seed"
   }
