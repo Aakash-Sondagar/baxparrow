@@ -18,6 +18,13 @@ app.use(cookieParser());
 app.get("/health", (_req, res) => res.json({ ok: true }));
 app.use("/api/v1", routes);
 app.use(errorHandler);
-connectDB().then(() =>
-  app.listen(env.port, "0.0.0.0", () => console.log("[api] :" + env.port))
-);
+
+// Listen first so Railway /health passes; DB connect after (Atlas can be slow)
+app.listen(env.port, "0.0.0.0", () => {
+  console.log("[api] :" + env.port);
+  connectDB().catch((err) => {
+    console.error("[db] connect failed:", err?.message ?? err);
+    process.exit(1);
+  });
+});
+

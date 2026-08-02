@@ -8,5 +8,5 @@ buildCommand = "pnpm install --frozen-lockfile"
 [deploy]
 startCommand = "pnpm --filter @baxparrow/api start"
 healthcheckPath = "/health"
-healthcheckTimeout = 30
+healthcheckTimeout = 100
 restartPolicyType = "ON_FAILURE"
