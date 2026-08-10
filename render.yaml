@@ -1,0 +1,18 @@
+# Render Web Service — monorepo root
+# Dashboard: Root Directory empty. Or use this Blueprint.
+
+services:
+  - type: web
+    name: baxsparrow-api
+    runtime: node
+    plan: free
+    buildCommand: npm install -g pnpm@9.0.0 && pnpm install --frozen-lockfile
+    startCommand: pnpm --filter @baxparrow/api start
+    healthCheckPath: /health
+    envVars:
+      - key: NODE_VERSION
+        value: "20"
+      - key: PORT
+        value: "4000"
+      # Set the rest in Render dashboard (secrets):
+      # MONGODB_URI, JWT_*, CLIENT_URL, RAZORPAY_*, CLOUDINARY_*, BREVO_*, MAIL_*
