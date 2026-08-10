@@ -6,6 +6,7 @@ import { buildOrderLines, genOrderNo } from "../services/order.service.js";
 import { createRzpOrder, verifySignature } from "../services/payment.service.js";
 import { createShipment, trackAwb } from "../services/shipping.service.js";
 import { notifyAdmins, notifyUsers } from "../services/notify.service.js";
+import { sendOrderConfirmationEmail } from "../services/mail.orders.js";
 export async function createOrder(req: AuthReq, res: Response) {
   const guestKey = String(req.headers["x-cart-key"] ?? "").trim();
   // Prefer Mongo cart (authoritative). Client items only if no server cart.
@@ -95,6 +96,39 @@ export async function verifyPayment(req: AuthReq, res: Response) {
   } catch (err) {
     console.error("notify failed for order.paid", order.orderNo, err);
   }
+  const addr = (order.address ?? {}) as Record<string, string>;
+  void sendOrderConfirmationEmail({
+    orderNo: order.orderNo,
+    email: addr.email || "",
+    name: [addr.firstName, addr.lastName].filter(Boolean).join(" "),
+    items: (order.items ?? []).map((i) => ({
+      name: i.name,
+      color: i.color,
+      size: i.size,
+      qty: i.qty,
+      price: i.price,
+    })),
+    amounts: {
+      subtotal: order.amounts?.subtotal,
+      mrp: order.amounts?.mrp,
+      discount: order.amounts?.discount,
+      discountPct: order.amounts?.discountPct,
+      shipping: order.amounts?.shipping,
+      gst: order.amounts?.gst,
+      total: order.amounts?.total,
+    },
+    address: {
+      firstName: addr.firstName,
+      lastName: addr.lastName,
+      address: addr.address,
+      city: addr.city,
+      pin: addr.pin,
+      phone: addr.phone,
+      email: addr.email,
+    },
+    paymentId: order.payment?.razorpayPaymentId,
+    createdAt: order.createdAt,
+  }).catch((err) => console.error("[mail] order confirm failed", order.orderNo, err));
   res.json({ ok: true, order });
 }
 export async function track(req: AuthReq, res: Response) {
@@ -102,4 +136,13 @@ export async function track(req: AuthReq, res: Response) {
   if (!order) return res.status(404).json({ error: "Order not found" });
   const live = order.shipment?.awb ? await trackAwb(order.shipment.awb) : [];
   res.json({ order, timeline: order.timeline, live });
+}
+
+export async function myOrders(req: AuthReq, res: Response) {
+  if (!req.user?.id) return res.status(401).json({ error: "Unauthorized" });
+  const orders = await Order.find({ user: req.user.id })
+    .sort({ createdAt: -1 })
+    .select("orderNo status amounts address payment createdAt items.name items.qty items.color")
+    .lean();
+  res.json(orders);
 }
