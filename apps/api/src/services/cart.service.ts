@@ -1,6 +1,8 @@
+import { Types } from "mongoose";
 import { computeTotals } from "@baxparrow/shared";
 import { Product } from "../models/Product.js";
 import { Cart } from "../models/Cart.js";
+import { resolveVariant } from "./variant.service.js";
 
 export type CartLineInput = {
   product: string;
@@ -8,6 +10,10 @@ export type CartLineInput = {
   size?: string;
   qty: number;
 };
+
+export function isProductId(id: string) {
+  return Types.ObjectId.isValid(id) && String(new Types.ObjectId(id)) === id;
+}
 
 export function toneIndex(id: string) {
   let h = 0;
@@ -20,7 +26,7 @@ export async function hydrateCart(cart: InstanceType<typeof Cart> | null) {
   if (!raw.length) {
     return {
       items: [] as any[],
-      amounts: computeTotals(0),
+      amounts: computeTotals(0, 0),
       count: 0,
     };
   }
@@ -33,9 +39,11 @@ export async function hydrateCart(cart: InstanceType<typeof Cart> | null) {
   for (const line of raw) {
     const id = String(line.product);
     const p = byId.get(id);
-    if (!p) continue; // drop missing/inactive
+    if (!p) continue;
     const qty = Math.max(1, Number(line.qty) || 1);
-    const price = p.price;
+    const v = resolveVariant(p as any, line.color ?? undefined);
+    const price = v.price;
+    const mrp = v.mrp ?? price;
     items.push({
       id,
       product: id,
@@ -43,19 +51,22 @@ export async function hydrateCart(cart: InstanceType<typeof Cart> | null) {
       name: p.name,
       cat: p.category,
       price,
+      mrp,
       lineTotal: price * qty,
+      lineMrp: mrp * qty,
       qty,
-      color: line.color ?? undefined,
+      color: line.color ?? v.color ?? undefined,
       size: line.size ?? undefined,
-      image: p.images?.[0] || undefined,
+      image: v.images?.[0] || p.images?.[0] || undefined,
       toneIndex: toneIndex(id),
     });
   }
 
   const subtotal = items.reduce((a, l) => a + l.lineTotal, 0);
+  const mrpTotal = items.reduce((a, l) => a + l.lineMrp, 0);
   return {
     items,
-    amounts: computeTotals(subtotal),
+    amounts: computeTotals(subtotal, mrpTotal),
     count: items.reduce((a, l) => a + l.qty, 0),
   };
 }
@@ -66,11 +77,34 @@ export async function findCartDoc(opts: { userId?: string; guestKey?: string }) 
   return null;
 }
 
+/** Create-or-get cart. Guest docs must omit `user` (null breaks old unique indexes). */
+async function upsertCart(
+  filter: Record<string, unknown>,
+  insert: Record<string, unknown>
+) {
+  const existing = await Cart.findOne(filter);
+  if (existing) return existing;
+
+  try {
+    return await Cart.create(insert);
+  } catch (e: any) {
+    if (e?.code === 11000) {
+      const again = await Cart.findOne(filter);
+      if (again) return again;
+      console.error("[cart] E11000", e?.keyPattern, e?.keyValue, e?.message);
+    }
+    throw e;
+  }
+}
+
 export async function getOrCreateCart(opts: { userId?: string; guestKey?: string }) {
-  let cart = await findCartDoc(opts);
-  if (cart) return cart;
-  if (opts.userId) return Cart.create({ user: opts.userId, items: [] });
-  if (opts.guestKey) return Cart.create({ guestKey: opts.guestKey, items: [] });
+  if (opts.userId) {
+    return upsertCart({ user: opts.userId }, { user: opts.userId, items: [] });
+  }
+  if (opts.guestKey) {
+    // Only guestKey — never set user:null
+    return upsertCart({ guestKey: opts.guestKey }, { guestKey: opts.guestKey, items: [] });
+  }
   throw Object.assign(new Error("No cart identity"), { status: 400 });
 }
 
@@ -79,7 +113,7 @@ export function normalizeItems(items: CartLineInput[]): CartLineInput[] {
   const map = new Map<string, CartLineInput>();
   for (const raw of items) {
     const product = String(raw.product ?? "").trim();
-    if (!product) continue;
+    if (!product || !isProductId(product)) continue;
     const qty = Math.max(0, Math.floor(Number(raw.qty) || 0));
     if (qty <= 0) continue;
     const color = raw.color ? String(raw.color) : undefined;
@@ -122,7 +156,7 @@ export async function mergeGuestIntoUser(userId: string, guestKey: string) {
     userCart.items = merged as any;
     await userCart.save();
   } else {
-    await Cart.create({ user: userId, items: merged });
+    await upsertCart({ user: userId }, { user: userId, items: merged });
   }
   await Cart.deleteOne({ _id: guestCart._id });
 }
