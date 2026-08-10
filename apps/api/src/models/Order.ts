@@ -7,7 +7,15 @@ const orderSchema = new Schema({
   orderNo: { type: String, required: true, unique: true },
   user: { type: Schema.Types.ObjectId, ref: "User" },
   items: [lineSub],
-  amounts: { subtotal: Number, shipping: Number, gst: Number, total: Number },
+  amounts: {
+    subtotal: Number,
+    mrp: Number,
+    discountPct: Number,
+    discount: Number,
+    shipping: Number,
+    gst: Number,
+    total: Number,
+  },
   address: Schema.Types.Mixed,
   payment: {
     razorpayOrderId: String, razorpayPaymentId: String,

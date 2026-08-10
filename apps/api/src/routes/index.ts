@@ -21,6 +21,8 @@ const authLimit = rateLimit({ windowMs: 15 * 60_000, max: 30 });
 r.post("/auth/register", authLimit, validate(registerSchema), A.register);
 r.post("/auth/login", authLimit, validate(loginSchema), A.login);
 r.post("/auth/logout", A.logout);
+r.get("/auth/me", auth, A.me);
+r.get("/me/orders", auth, O.myOrders);
 
 // catalog (public)
 r.get("/products", P.list);

@@ -25,6 +25,9 @@ export type CartItem = {
 
 export type CartAmounts = {
   subtotal: number;
+  mrp: number;
+  discountPct: number;
+  discount: number;
   shipping: number;
   gst: number;
   total: number;
@@ -44,7 +47,15 @@ type Ctx = {
   refresh: () => Promise<void>;
 };
 
-const ZERO: CartAmounts = { subtotal: 0, shipping: 0, gst: 0, total: 0 };
+const ZERO: CartAmounts = {
+  subtotal: 0,
+  mrp: 0,
+  discountPct: 0,
+  discount: 0,
+  shipping: 0,
+  gst: 0,
+  total: 0,
+};
 const CartCtx = createContext<Ctx>(null!);
 export const useCart = () => useContext(CartCtx);
 
@@ -91,7 +102,7 @@ function applyPayload(
     } as CartItem;
   });
   setItems(items);
-  setAmounts(data.amounts ?? ZERO);
+  setAmounts({ ...ZERO, ...(data.amounts ?? {}) });
   setCount(data.count ?? items.reduce((a, x) => a + x.qty, 0));
 }
 

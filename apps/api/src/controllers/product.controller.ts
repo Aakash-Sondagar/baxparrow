@@ -2,6 +2,7 @@ import type { Request, Response } from "express";
 import { Product } from "../models/Product.js";
 import { slugify } from "../utils/slugify.js";
 import { notifyAdmins, stockCrossing } from "../services/notify.service.js";
+import { syncProductFromVariants } from "../services/variant.service.js";
 
 async function safeNotifyAdmins(...args: Parameters<typeof notifyAdmins>) {
   try {
@@ -38,43 +39,60 @@ export async function byId(req: Request, res: Response) {
   res.json(p);
 }
 export async function create(req: Request, res: Response) {
-  const slug = slugify(req.body.name) + "-" + Date.now().toString(36);
-  const p = await Product.create({ ...req.body, slug });
-  await safeNotifyAdmins({
-    type: "product.created",
-    title: "Product created",
-    body: p.name,
-    href: "/admin/products",
-    meta: { productId: String(p._id) },
-  });
-  res.status(201).json(p);
+  try {
+    const slug = slugify(req.body.name) + "-" + Date.now().toString(36);
+    const body = syncProductFromVariants({ ...req.body });
+    if (Array.isArray(body.images)) body.images = body.images.slice(0, 6);
+    if (Array.isArray(body.sizes)) body.sizes = body.sizes.slice(0, 12);
+    const p = await Product.create({ ...body, slug });
+    await safeNotifyAdmins({
+      type: "product.created",
+      title: "Product created",
+      body: p.name,
+      href: "/admin/products",
+      meta: { productId: String(p._id) },
+    });
+    res.status(201).json(p);
+  } catch (e: any) {
+    if (e?.code === 11000) {
+      return res.status(400).json({ error: "SKU already exists (product or colour variant)" });
+    }
+    throw e;
+  }
 }
 export async function update(req: Request, res: Response) {
-  const prev = await Product.findById(req.params.id);
-  const body = { ...req.body };
-  if (Array.isArray(body.images)) body.images = body.images.slice(0, 6);
-  if (Array.isArray(body.colors)) body.colors = body.colors.slice(0, 12);
-  if (Array.isArray(body.sizes)) body.sizes = body.sizes.slice(0, 12);
-  const p = await Product.findByIdAndUpdate(req.params.id, body, { new: true });
-  if (!p) return res.status(404).json({ error: "Not found" });
-  await safeNotifyAdmins({
-    type: "product.updated",
-    title: "Product updated",
-    body: p.name,
-    href: "/admin/products",
-    meta: { productId: String(p._id) },
-  });
-  const cross = stockCrossing(prev?.stock ?? 0, p.stock ?? 0);
-  if (cross) {
+  try {
+    const prev = await Product.findById(req.params.id);
+    const body = syncProductFromVariants({ ...req.body });
+    if (Array.isArray(body.images)) body.images = body.images.slice(0, 6);
+    if (Array.isArray(body.colors)) body.colors = body.colors.slice(0, 12);
+    if (Array.isArray(body.sizes)) body.sizes = body.sizes.slice(0, 12);
+    const p = await Product.findByIdAndUpdate(req.params.id, body, { new: true });
+    if (!p) return res.status(404).json({ error: "Not found" });
     await safeNotifyAdmins({
-      type: cross,
-      title: cross === "inventory.out" ? "Out of stock" : "Low stock",
-      body: `${p.name} · stock ${p.stock}`,
+      type: "product.updated",
+      title: "Product updated",
+      body: p.name,
       href: "/admin/products",
-      meta: { productId: String(p._id), stock: p.stock },
+      meta: { productId: String(p._id) },
     });
+    const cross = stockCrossing(prev?.stock ?? 0, p.stock ?? 0);
+    if (cross) {
+      await safeNotifyAdmins({
+        type: cross,
+        title: cross === "inventory.out" ? "Out of stock" : "Low stock",
+        body: `${p.name} · stock ${p.stock}`,
+        href: "/admin/products",
+        meta: { productId: String(p._id), stock: p.stock },
+      });
+    }
+    res.json(p);
+  } catch (e: any) {
+    if (e?.code === 11000) {
+      return res.status(400).json({ error: "SKU already exists (product or colour variant)" });
+    }
+    throw e;
   }
-  res.json(p);
 }
 export async function remove(req: Request, res: Response) {
   const p = await Product.findById(req.params.id);

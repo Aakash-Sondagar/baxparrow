@@ -14,4 +14,16 @@ export const env = {
     apiSecret: req("CLOUDINARY_API_SECRET"),
     folder: req("CLOUDINARY_FOLDER", "baxparrow"),
   },
+  resend: {
+    apiKey: req("RESEND_API_KEY"),
+  },
+  brevo: {
+    apiKey: req("BREVO_API_KEY"),
+  },
+  mail: {
+    /** "brevo" | "resend" | "" (auto: prefer Brevo if key set) */
+    provider: req("MAIL_PROVIDER"),
+    /** e.g. Baxsparrow <baxsparrowweb@gmail.com> — must be a verified Brevo sender */
+    from: req("MAIL_FROM", "Baxsparrow <onboarding@resend.dev>"),
+  },
 };

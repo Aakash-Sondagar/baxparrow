@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Link, NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
-import { Search, ShoppingBag, Menu, X } from "lucide-react";
+import { Search, ShoppingBag, Menu, X, User } from "lucide-react";
 import { useCart } from "../features/cart/CartContext";
 import { useAuth } from "../features/auth/AuthContext";
 import { NotificationBell } from "../features/notifications/NotificationBell";
@@ -109,6 +109,15 @@ export function StoreLayout() {
             {user && <NotificationBell scope="customer" />}
             <button
               type="button"
+              onClick={() => nav("/account")}
+              className="cursor-pointer border-0 bg-transparent p-1 text-text2 transition-colors hover:text-cognac"
+              aria-label={user ? "My account" : "Log in"}
+              title={user ? "My account" : "Log in"}
+            >
+              <User size={20} />
+            </button>
+            <button
+              type="button"
               onClick={() => nav("/cart")}
               className="relative cursor-pointer border-0 bg-transparent p-1 text-ink transition-transform duration-200 hover:scale-105 active:scale-95"
             >
@@ -175,6 +184,13 @@ export function StoreLayout() {
           >
             Search
           </NavLink>
+          <NavLink
+            to="/account"
+            onClick={() => setMobileNav(false)}
+            className="rounded-lg px-3 py-3 text-sm font-medium text-text2 transition-colors duration-200 hover:bg-subtle"
+          >
+            {user ? "My account" : "Log in"}
+          </NavLink>
         </nav>
       </div>
 
@@ -198,16 +214,46 @@ export function StoreLayout() {
           </div>
           {(
             [
-              ["Shop", ["Backpacks", "Office & Laptop", "Travel & Luggage", "Leather"]],
-              ["Company", ["About", "Wholesale", "Track order", "Contact"]],
-              ["Support", ["Shipping", "Returns", "Warranty", "FAQ"]],
+              [
+                "Shop",
+                [
+                  { label: "Backpacks", to: "/shop?category=Sport%20Bags" },
+                  { label: "Office & Laptop", to: "/shop?category=Office%20Bags" },
+                  { label: "Travel & Luggage", to: "/shop?category=Travel%20Bags" },
+                  { label: "Leather", to: "/shop?category=Leather%20Bags" },
+                ],
+              ],
+              [
+                "Company",
+                [
+                  { label: "About", to: "/about" },
+                  { label: "Wholesale", to: "/contact" },
+                  { label: "Contact", to: "/contact" },
+                ],
+              ],
+              [
+                "Support",
+                [
+                  { label: "Shipping", to: "/shipping" },
+                  { label: "Returns", to: "/returns" },
+                  { label: "Warranty", to: "/warranty" },
+                  { label: "FAQ", to: "/faq" },
+                  { label: "My orders", to: "/account" },
+                ],
+              ],
             ] as const
           ).map(([h, items]) => (
             <div key={h}>
               <div className="mb-3 text-sm font-bold text-bg">{h}</div>
               <div className="flex flex-col gap-2 text-[13.5px]">
                 {items.map((i) => (
-                  <span key={i}>{i}</span>
+                  <Link
+                    key={i.label}
+                    to={i.to}
+                    className="text-[#CDC4BA] transition-colors duration-200 hover:text-tan"
+                  >
+                    {i.label}
+                  </Link>
                 ))}
               </div>
             </div>

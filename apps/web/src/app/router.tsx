@@ -11,6 +11,13 @@ import Confirm from "../routes/store/Confirm";
 import Track from "../routes/store/Track";
 import Search from "../routes/store/Search";
 import Contact from "../routes/store/Contact";
+import About from "../routes/store/About";
+import Faq from "../routes/store/Faq";
+import Shipping from "../routes/store/Shipping";
+import Returns from "../routes/store/Returns";
+import Warranty from "../routes/store/Warranty";
+import Account from "../routes/store/Account";
+import AccountAuth from "../routes/store/AccountAuth";
 import Dashboard from "../routes/admin/Dashboard";
 import Products from "../routes/admin/Products";
 import ProductForm from "../routes/admin/ProductForm";
@@ -29,6 +36,14 @@ export const router = createBrowserRouter([
     { path: "order/:no/track", element: <Track /> },
     { path: "search", element: <Search /> },
     { path: "contact", element: <Contact /> },
+    { path: "about", element: <About /> },
+    { path: "faq", element: <Faq /> },
+    { path: "shipping", element: <Shipping /> },
+    { path: "returns", element: <Returns /> },
+    { path: "warranty", element: <Warranty /> },
+    { path: "account", element: <Account /> },
+    { path: "login", element: <AccountAuth /> },
+    { path: "signup", element: <AccountAuth /> },
   ]},
   { path: "/admin", element: <ProtectedAdmin><AdminLayout /></ProtectedAdmin>, children: [
     { index: true, element: <Navigate to="/admin/dashboard" replace /> },

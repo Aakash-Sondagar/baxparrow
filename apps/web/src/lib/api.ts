@@ -22,10 +22,11 @@ api.interceptors.request.use((cfg) => {
 api.interceptors.response.use(
   (res) => res,
   (err) => {
-    if (err.response?.status === 401) {
+    const url = String(err.config?.url ?? "");
+    const isAuthAttempt = /\/auth\/(login|register)/.test(url);
+    if (err.response?.status === 401 && !isAuthAttempt) {
       setToken(null);
       localStorage.removeItem("bx_user");
-      // Soft clear — AuthProvider re-reads on next navigation/remount via storage events if needed
       window.dispatchEvent(new Event("bx:logout"));
     }
     return Promise.reject(err);

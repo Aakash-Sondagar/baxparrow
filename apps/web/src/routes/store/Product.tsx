@@ -1,9 +1,18 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { tile } from "../../styles/tokens";
 import { inr } from "../../lib/format";
 import { useProduct } from "../../features/products/hooks";
 import { useCart } from "../../features/cart/CartContext";
+
+type Variant = {
+  color: string;
+  sku: string;
+  price: number;
+  mrp: number;
+  stock?: number;
+  images?: string[];
+};
 
 export default function Product() {
   const { slug } = useParams();
@@ -14,13 +23,33 @@ export default function Product() {
   const [colorIdx, setColorIdx] = useState(0);
   const [sizeIdx, setSizeIdx] = useState(0);
 
+  const variants: Variant[] = Array.isArray(p?.variants) ? p.variants.filter((v: any) => v?.color) : [];
+  const legacyColors: string[] = Array.isArray(p?.colors) ? p.colors.filter(Boolean) : [];
+  const colors = variants.length ? variants.map((v) => v.color) : legacyColors;
+  const sizes: string[] = Array.isArray(p?.sizes) ? p.sizes.filter(Boolean) : [];
+
+  const activeVariant = variants[colorIdx];
+  const price = activeVariant?.price ?? p?.price ?? 0;
+  const mrp = activeVariant?.mrp ?? p?.mrp ?? 0;
+  const sku = activeVariant?.sku ?? p?.sku ?? "";
+  const stock = activeVariant?.stock ?? p?.stock ?? 0;
+  const images: string[] = (
+    activeVariant?.images?.length
+      ? activeVariant.images
+      : Array.isArray(p?.images)
+        ? p.images
+        : []
+  ).filter(Boolean);
+
+  useEffect(() => {
+    setImgIdx(0);
+  }, [colorIdx]);
+
   if (!p) return <div className="p-[60px] text-center text-muted">Loading…</div>;
 
-  const images: string[] = Array.isArray(p.images) ? p.images.filter(Boolean) : [];
-  const colors: string[] = Array.isArray(p.colors) ? p.colors.filter(Boolean) : [];
-  const sizes: string[] = Array.isArray(p.sizes) ? p.sizes.filter(Boolean) : [];
   const main = images[Math.min(imgIdx, Math.max(0, images.length - 1))];
-  const off = p.mrp > 0 ? Math.round((1 - p.price / p.mrp) * 100) : 0;
+  const off = mrp > 0 ? Math.round((1 - price / mrp) * 100) : 0;
+  const outOfStock = stock <= 0;
 
   const addToCart = () =>
     add(p._id, {
@@ -64,16 +93,16 @@ export default function Product() {
         </div>
         <div>
           <div className="font-mono text-xs text-muted2">
-            {p.category} · SKU {p.sku}
+            {p.category} · SKU {sku}
           </div>
           <h1 className="mt-2 mb-2.5 font-display text-[28px] font-extrabold tracking-[-.02em] sm:text-4xl">
             {p.name}
           </h1>
           <div className="mb-2 flex items-baseline gap-3">
-            <span className="font-display text-[30px] font-extrabold">{inr(p.price)}</span>
-            {p.mrp > p.price && (
+            <span className="font-display text-[30px] font-extrabold">{inr(price)}</span>
+            {mrp > price && (
               <>
-                <span className="text-[17px] text-muted2 line-through">{inr(p.mrp)}</span>
+                <span className="text-[17px] text-muted2 line-through">{inr(mrp)}</span>
                 {off > 0 && (
                   <span className="rounded-[20px] bg-green-bg px-2.5 py-[3px] text-[13px] font-bold text-green">
                     {off}% off
@@ -82,6 +111,11 @@ export default function Product() {
               </>
             )}
           </div>
+          {colors.length > 0 && (
+            <div className="mb-1 text-[12px] text-muted">
+              {outOfStock ? "Out of stock" : `${stock} in stock`} for this colour
+            </div>
+          )}
           {p.description && (
             <p className="mt-3.5 mb-[22px] text-[15px] leading-[1.65] text-text3">{p.description}</p>
           )}
@@ -140,17 +174,19 @@ export default function Product() {
           )}
           <div className="flex flex-col gap-3 sm:flex-row">
             <button
+              disabled={outOfStock}
               onClick={addToCart}
-              className="flex-1 cursor-pointer rounded-xl border-none bg-ink p-4 text-[15px] font-bold text-bg"
+              className="flex-1 cursor-pointer rounded-xl border-none bg-ink p-4 text-[15px] font-bold text-bg disabled:cursor-not-allowed disabled:opacity-50"
             >
-              Add to cart · {inr(p.price)}
+              {outOfStock ? "Out of stock" : `Add to cart · ${inr(price)}`}
             </button>
             <button
+              disabled={outOfStock}
               onClick={() => {
                 addToCart();
                 nav("/checkout");
               }}
-              className="flex-1 cursor-pointer rounded-xl border-none bg-cognac p-4 text-[15px] font-bold text-white"
+              className="flex-1 cursor-pointer rounded-xl border-none bg-cognac p-4 text-[15px] font-bold text-white disabled:cursor-not-allowed disabled:opacity-50"
             >
               Buy now
             </button>
