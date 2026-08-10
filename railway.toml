@@ -3,7 +3,7 @@
 
 [build]
 builder = "NIXPACKS"
-buildCommand = "pnpm install --frozen-lockfile"
+buildCommand = "npm install -g pnpm@9.0.0 && pnpm install --frozen-lockfile"
 
 [deploy]
 startCommand = "pnpm --filter @baxparrow/api start"
