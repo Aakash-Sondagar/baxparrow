@@ -7,6 +7,8 @@
     "build": "pnpm -r build",
     "build:api": "pnpm --filter @baxparrow/api... build",
     "start:api": "pnpm --filter @baxparrow/api start",
+    "render:build": "npx --yes pnpm@9.0.0 install --frozen-lockfile",
+    "render:start": "npx --yes pnpm@9.0.0 --filter @baxparrow/api start",
     "lint": "pnpm -r lint",
     "seed": "pnpm --filter @baxparrow/api seed"
   }
