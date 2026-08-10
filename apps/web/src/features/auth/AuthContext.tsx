@@ -5,7 +5,7 @@ type User = { id: string; name: string; email: string; role: string };
 type Ctx = {
   user: User | null;
   login: (e: string, p: string) => Promise<void>;
-  register: (n: string, e: string, p: string, role?: string) => Promise<void>;
+  register: (n: string, e: string, p: string) => Promise<void>;
   loginGoogle: () => void;
   logout: () => void;
 };
@@ -35,8 +35,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     persist(data.user, data.accessToken);
   };
 
-  const register = async (name: string, email: string, password: string, role = "customer") => {
-    const { data } = await api.post("/auth/register", { name, email, password, role });
+  const register = async (name: string, email: string, password: string) => {
+    const { data } = await api.post("/auth/register", { name, email, password });
     persist(data.user, data.accessToken);
   };
 
