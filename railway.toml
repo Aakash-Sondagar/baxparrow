@@ -3,10 +3,10 @@
 
 [build]
 builder = "NIXPACKS"
-buildCommand = "npm install -g pnpm@9.0.0 && pnpm install --frozen-lockfile"
+buildCommand = "npx --yes pnpm@9.0.0 install --frozen-lockfile"
 
 [deploy]
-startCommand = "pnpm --filter @baxparrow/api start"
+startCommand = "npx --yes pnpm@9.0.0 --filter @baxparrow/api start"
 healthcheckPath = "/health"
 healthcheckTimeout = 100
 restartPolicyType = "ON_FAILURE"
