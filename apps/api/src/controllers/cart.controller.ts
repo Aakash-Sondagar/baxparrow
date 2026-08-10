@@ -1,9 +1,11 @@
 import type { Response } from "express";
 import type { AuthReq } from "../middleware/auth.js";
 import { Product } from "../models/Product.js";
+import { Cart } from "../models/Cart.js";
 import {
   getOrCreateCart,
   hydrateCart,
+  isProductId,
   mergeGuestIntoUser,
   normalizeItems,
   type CartLineInput,
@@ -31,7 +33,6 @@ async function resolveCart(req: AuthReq) {
 }
 
 async function respond(cart: Awaited<ReturnType<typeof getOrCreateCart>>, res: Response) {
-  // Drop lines for deleted products by rewriting cart
   const hydrated = await hydrateCart(cart);
   const keptIds = new Set(hydrated.items.map((i) => i.product));
   const before = cart.items.length;
@@ -40,19 +41,27 @@ async function respond(cart: Awaited<ReturnType<typeof getOrCreateCart>>, res: R
   res.json(hydrated);
 }
 
+function fail(res: Response, e: any) {
+  console.error("[cart]", e?.message ?? e);
+  res.status(e.status ?? 500).json({ error: e.message ?? "Cart error" });
+}
+
 export async function getCart(req: AuthReq, res: Response) {
   try {
     const cart = await resolveCart(req);
     await respond(cart, res);
   } catch (e: any) {
-    res.status(e.status ?? 500).json({ error: e.message ?? "Cart error" });
+    fail(res, e);
   }
 }
 
 export async function addItem(req: AuthReq, res: Response) {
   try {
-    const cart = await resolveCart(req);
-    const productId = String(req.body.product);
+    const productId = String(req.body.product ?? "");
+    if (!isProductId(productId)) {
+      return res.status(400).json({ error: "Invalid product id" });
+    }
+
     const qty = Math.max(1, Math.floor(Number(req.body.qty) || 1));
     const color = req.body.color ? String(req.body.color) : undefined;
     const size = req.body.size ? String(req.body.size) : undefined;
@@ -60,20 +69,34 @@ export async function addItem(req: AuthReq, res: Response) {
     const p = await Product.findOne({ _id: productId, status: "active" });
     if (!p) return res.status(404).json({ error: "Product not found" });
 
-    const items = normalizeItems([
-      ...cart.items.map((i) => ({
-        product: String(i.product),
-        color: i.color ?? undefined,
-        size: i.size ?? undefined,
-        qty: i.qty,
-      })),
-      { product: productId, color, size, qty },
-    ]);
-    cart.items = items as any;
-    await cart.save();
-    await respond(cart, res);
+    const cart = await resolveCart(req);
+    const line = { product: productId, color, size, qty };
+
+    // Retry on VersionError when StrictMode / double-click races
+    let saved = cart;
+    for (let attempt = 0; attempt < 3; attempt++) {
+      const fresh = attempt === 0 ? cart : (await Cart.findById(cart._id)) ?? cart;
+      const items = normalizeItems([
+        ...fresh.items.map((i) => ({
+          product: String(i.product),
+          color: i.color ?? undefined,
+          size: i.size ?? undefined,
+          qty: i.qty,
+        })),
+        line,
+      ]);
+      fresh.items = items as any;
+      try {
+        await fresh.save();
+        saved = fresh;
+        break;
+      } catch (e: any) {
+        if (e?.name !== "VersionError" || attempt === 2) throw e;
+      }
+    }
+    await respond(saved, res);
   } catch (e: any) {
-    res.status(e.status ?? 500).json({ error: e.message ?? "Cart error" });
+    fail(res, e);
   }
 }
 
@@ -83,7 +106,6 @@ export async function setItems(req: AuthReq, res: Response) {
     const incoming = Array.isArray(req.body.items) ? (req.body.items as CartLineInput[]) : [];
     const items = normalizeItems(incoming);
 
-    // Validate products exist
     if (items.length) {
       const found = await Product.find({
         _id: { $in: items.map((i) => i.product) },
@@ -97,6 +119,6 @@ export async function setItems(req: AuthReq, res: Response) {
     await cart.save();
     await respond(cart, res);
   } catch (e: any) {
-    res.status(e.status ?? 500).json({ error: e.message ?? "Cart error" });
+    fail(res, e);
   }
 }
