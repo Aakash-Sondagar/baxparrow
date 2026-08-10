@@ -10,7 +10,7 @@ function isHex(c: string) {
 export default function CartPage() {
   const nav = useNavigate();
   const { items, amounts, setQty, remove, loading } = useCart();
-  const { subtotal, shipping, gst, total } = amounts;
+  const { subtotal, mrp, discountPct, discount, shipping, gst, total } = amounts;
 
   if (loading) {
     return (
@@ -122,24 +122,36 @@ export default function CartPage() {
           </div>
           <div className="sticky bottom-0 z-10 rounded-[15px] border border-border bg-card p-5 sm:p-6 lg:top-[112px] lg:bottom-auto">
             <div className="mb-[18px] font-display text-lg font-bold">Order summary</div>
-            {(
-              [
-                ["Subtotal", inr(subtotal)],
-                ["Shipping", shipping === 0 ? "FREE" : inr(shipping)],
-                ["GST (18%)", inr(gst)],
-              ] as const
-            ).map(([k, v]) => (
-              <div key={k} className="mb-[11px] flex justify-between text-sm text-text3">
-                <span>{k}</span>
-                <span
-                  className={`font-body tabular-nums ${
-                    k === "Shipping" && shipping === 0 ? "text-green" : "text-text3"
-                  }`}
-                >
-                  {v}
-                </span>
+            {mrp > subtotal && (
+              <div className="mb-[11px] flex justify-between text-sm text-text3">
+                <span>MRP</span>
+                <span className="font-body tabular-nums">{inr(mrp)}</span>
               </div>
-            ))}
+            )}
+            {discountPct > 0 && (
+              <div className="mb-[11px] flex justify-between text-sm text-green">
+                <span>Discount (−{discountPct}% off)</span>
+                <span className="font-body tabular-nums">−{inr(discount)}</span>
+              </div>
+            )}
+            <div className="mb-[11px] flex justify-between text-sm text-text3">
+              <span>GST (18% incl.)</span>
+              <span className="font-body tabular-nums">{inr(gst)}</span>
+            </div>
+            <div className="mb-[11px] flex justify-between text-sm text-text3">
+              <span>Selling price</span>
+              <span className="font-body tabular-nums">{inr(subtotal)}</span>
+            </div>
+            <div className="mb-[11px] flex justify-between text-sm text-text3">
+              <span>Shipping</span>
+              <span
+                className={`font-body tabular-nums ${
+                  shipping === 0 ? "text-green" : "text-text3"
+                }`}
+              >
+                {shipping === 0 ? "FREE" : inr(shipping)}
+              </span>
+            </div>
             <div className="mb-5 flex items-baseline justify-between border-t border-border pt-4">
               <span className="text-base font-bold">Total</span>
               <span className="font-display text-2xl font-extrabold">{inr(total)}</span>
