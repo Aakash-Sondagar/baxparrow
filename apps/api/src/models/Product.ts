@@ -8,6 +8,7 @@ const variantSub = new Schema(
     mrp: { type: Number, required: true },
     stock: { type: Number, default: 0 },
     images: [String],
+    youtubeUrl: { type: String, default: "" },
   },
   { _id: false }
 );
