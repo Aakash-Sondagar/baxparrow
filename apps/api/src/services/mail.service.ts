@@ -35,12 +35,9 @@ export type SendMailInput = {
 type Provider = "brevo" | "resend" | "none";
 
 function activeProvider(): Provider {
-  if (env.mail.provider === "brevo" || (!env.mail.provider && env.brevo.apiKey.trim())) {
-    return env.brevo.apiKey.trim() ? "brevo" : "none";
-  }
-  if (env.mail.provider === "resend" || (!env.mail.provider && env.resend.apiKey.trim())) {
-    return env.resend.apiKey.trim() ? "resend" : "none";
-  }
+  const want = env.mail.provider.trim().toLowerCase();
+  if (want === "brevo" && env.brevo.apiKey.trim()) return "brevo";
+  if (want === "resend" && env.resend.apiKey.trim()) return "resend";
   if (env.brevo.apiKey.trim()) return "brevo";
   if (env.resend.apiKey.trim()) return "resend";
   return "none";

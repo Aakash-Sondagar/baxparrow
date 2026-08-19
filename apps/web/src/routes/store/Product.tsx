@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
+import { youtubeVideoId } from "@baxparrow/shared";
 import { tile } from "../../styles/tokens";
 import { inr } from "../../lib/format";
 import { useProduct } from "../../features/products/hooks";
@@ -12,6 +13,7 @@ type Variant = {
   mrp: number;
   stock?: number;
   images?: string[];
+  youtubeUrl?: string;
 };
 
 export default function Product() {
@@ -40,6 +42,14 @@ export default function Product() {
         ? p.images
         : []
   ).filter(Boolean);
+  const ytId = youtubeVideoId(String(activeVariant?.youtubeUrl ?? ""));
+  type Media =
+    | { kind: "image"; src: string }
+    | { kind: "video"; id: string };
+  const media: Media[] = [
+    ...images.map((src) => ({ kind: "image" as const, src })),
+    ...(ytId ? [{ kind: "video" as const, id: ytId }] : []),
+  ];
 
   useEffect(() => {
     setImgIdx(0);
@@ -47,7 +57,7 @@ export default function Product() {
 
   if (!p) return <div className="p-[60px] text-center text-muted">Loading…</div>;
 
-  const main = images[Math.min(imgIdx, Math.max(0, images.length - 1))];
+  const active = media[Math.min(imgIdx, Math.max(0, media.length - 1))];
   const off = mrp > 0 ? Math.round((1 - price / mrp) * 100) : 0;
   const outOfStock = stock <= 0;
 
@@ -64,28 +74,49 @@ export default function Product() {
       </div>
       <div className="grid grid-cols-1 items-start gap-8 lg:grid-cols-[1.1fr_1fr] lg:gap-11">
         <div className="flex flex-col-reverse gap-3 sm:flex-row">
-          {images.length > 1 && (
+          {media.length > 1 && (
             <div className="flex flex-row gap-2.5 overflow-x-auto sm:flex-col">
-              {images.map((src, i) => (
+              {media.map((m, i) => (
                 <button
-                  key={src + i}
+                  key={m.kind === "image" ? m.src + i : m.id}
                   type="button"
                   onClick={() => setImgIdx(i)}
-                  className={`h-14 w-14 shrink-0 overflow-hidden rounded-[10px] border-2 p-0 sm:h-16 sm:w-16 ${
+                  className={`relative h-14 w-14 shrink-0 overflow-hidden rounded-[10px] border-2 p-0 sm:h-16 sm:w-16 ${
                     i === imgIdx ? "border-cognac" : "border-border"
                   }`}
                 >
-                  <img src={src} alt="" className="h-full w-full object-cover" />
+                  {m.kind === "image" ? (
+                    <img src={m.src} alt="" className="h-full w-full object-cover" />
+                  ) : (
+                    <>
+                      <img
+                        src={`https://img.youtube.com/vi/${m.id}/mqdefault.jpg`}
+                        alt=""
+                        className="h-full w-full object-cover"
+                      />
+                      <span className="absolute inset-0 grid place-items-center bg-black/35 text-[11px] font-bold text-white">
+                        ▶
+                      </span>
+                    </>
+                  )}
                 </button>
               ))}
             </div>
           )}
           <div
-            className="relative grid aspect-[1/1.05] flex-1 place-items-center overflow-hidden rounded-[18px] border border-border"
-            style={!main ? { background: tile(0) } : undefined}
+            className="relative grid aspect-[1/1.05] flex-1 place-items-center overflow-hidden rounded-[18px] border border-border bg-ink"
+            style={!active || active.kind === "image" ? (!active ? { background: tile(0) } : undefined) : undefined}
           >
-            {main ? (
-              <img src={main} alt={p.name} className="h-full w-full object-cover" />
+            {active?.kind === "video" ? (
+              <iframe
+                title={`${p.name} video`}
+                src={`https://www.youtube-nocookie.com/embed/${active.id}?rel=0`}
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                allowFullScreen
+                className="h-full w-full border-0"
+              />
+            ) : active?.kind === "image" ? (
+              <img src={active.src} alt={p.name} className="h-full w-full object-cover" />
             ) : (
               <span className="font-mono text-xs text-[#9C8B7A]">[ {p.name} — product shot ]</span>
             )}

@@ -2,7 +2,7 @@ import { useEffect, useRef, useState, type ChangeEvent } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { Pencil, Plus, Trash2, X } from "lucide-react";
-import { MAX_PRODUCT_IMAGES } from "@baxparrow/shared";
+import { MAX_PRODUCT_IMAGES, youtubeVideoId } from "@baxparrow/shared";
 import { uploadImage } from "../../lib/cloudinary";
 import { createProduct, fetchAdminProduct, updateProduct } from "../../features/products/mutations";
 import { api } from "../../lib/api";
@@ -20,6 +20,7 @@ type Variant = {
   mrp: string;
   stock: string;
   images: string[];
+  youtubeUrl: string;
 };
 
 function emptyVariant(partial?: Partial<Variant>): Variant {
@@ -30,6 +31,7 @@ function emptyVariant(partial?: Partial<Variant>): Variant {
     mrp: "",
     stock: "0",
     images: [],
+    youtubeUrl: "",
     ...partial,
   };
 }
@@ -157,6 +159,7 @@ export default function ProductForm() {
                 mrp: String(v.mrp ?? ""),
                 stock: String(v.stock ?? 0),
                 images: (v.images ?? []).slice(0, MAX_PRODUCT_IMAGES),
+                youtubeUrl: v.youtubeUrl ?? p.youtubeUrl ?? "",
               })
             )
           );
@@ -171,6 +174,7 @@ export default function ProductForm() {
               mrp: String(p.mrp ?? ""),
               stock: String(p.stock ?? 0),
               images: (p.images ?? []).slice(0, MAX_PRODUCT_IMAGES),
+              youtubeUrl: p.youtubeUrl ?? "",
             }),
           ]);
         }
@@ -274,6 +278,7 @@ export default function ProductForm() {
       mrp: Number(v.mrp) || 0,
       stock: Number(v.stock || 0),
       images: v.images.slice(0, MAX_PRODUCT_IMAGES),
+      youtubeUrl: v.youtubeUrl.trim(),
     }));
     const primary = normalized[0];
     const body = {
@@ -369,7 +374,7 @@ export default function ProductForm() {
           <div>
             <div className="font-display text-base font-bold">Colour variants</div>
             <p className="m-0 mt-1 text-[13px] text-muted">
-              Each colour gets own SKU, price, stock, and images.
+              Each colour gets own SKU, price, stock, images, and YouTube video.
             </p>
           </div>
           <button
@@ -450,6 +455,23 @@ export default function ProductForm() {
                     className={`${field} font-mono`}
                   />
                 </div>
+              </div>
+
+              <div className="mt-3">
+                <label className={label}>YouTube video (optional)</label>
+                <input
+                  value={v.youtubeUrl}
+                  onChange={(e) => patchVariant(vi, { youtubeUrl: e.target.value })}
+                  placeholder="https://www.youtube.com/watch?v=… or youtu.be/…"
+                  className={field}
+                />
+                {youtubeVideoId(v.youtubeUrl) && (
+                  <img
+                    src={`https://img.youtube.com/vi/${youtubeVideoId(v.youtubeUrl)}/mqdefault.jpg`}
+                    alt=""
+                    className="mt-2 h-16 w-28 rounded-[8px] object-cover"
+                  />
+                )}
               </div>
 
               <div className="mt-4">

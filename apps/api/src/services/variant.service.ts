@@ -14,6 +14,7 @@ type ProductLike = {
     mrp: number;
     stock?: number;
     images?: string[];
+    youtubeUrl?: string;
   }>;
 };
 
@@ -28,6 +29,7 @@ export function resolveVariant(p: ProductLike, color?: string) {
       mrp: p.mrp,
       stock: p.stock ?? 0,
       images: p.images ?? [],
+      youtubeUrl: "",
     };
   }
   const want = (color ?? "").trim();
@@ -40,8 +42,9 @@ export function resolveVariant(p: ProductLike, color?: string) {
     price: hit.price,
     mrp: hit.mrp,
     stock: hit.stock ?? 0,
-    images: hit.images ?? [],
-  };
+      images: hit.images ?? [],
+      youtubeUrl: hit.youtubeUrl ?? "",
+    };
 }
 
 /** Sync top-level listing fields from colour variants. */
@@ -61,6 +64,7 @@ export function syncProductFromVariants(body: Record<string, any>) {
     mrp: Number(v.mrp) || 0,
     stock: Math.max(0, Math.floor(Number(v.stock) || 0)),
     images: Array.isArray(v.images) ? v.images.slice(0, 6) : [],
+    youtubeUrl: String(v.youtubeUrl ?? "").trim(),
   }));
   body.colors = body.variants.map((v: any) => v.color);
   const primary = body.variants[0];

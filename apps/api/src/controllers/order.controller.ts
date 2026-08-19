@@ -3,7 +3,7 @@ import type { AuthReq } from "../middleware/auth.js";
 import { Cart } from "../models/Cart.js";
 import { Order } from "../models/Order.js";
 import { buildOrderLines, genOrderNo } from "../services/order.service.js";
-import { createRzpOrder, verifySignature } from "../services/payment.service.js";
+import { createRzpOrder, PaymentError, verifySignature } from "../services/payment.service.js";
 import { createShipment, trackAwb } from "../services/shipping.service.js";
 import { notifyAdmins, notifyUsers } from "../services/notify.service.js";
 import { sendOrderConfirmationEmail } from "../services/mail.orders.js";
@@ -29,7 +29,14 @@ export async function createOrder(req: AuthReq, res: Response) {
   if (!items?.length) return res.status(400).json({ error: "Cart empty" });
   const { lines, amounts } = await buildOrderLines(items);
   const orderNo = genOrderNo();
-  const rzp = await createRzpOrder(amounts.total * 100, orderNo);
+  let rzp;
+  try {
+    rzp = await createRzpOrder(amounts.total * 100, orderNo);
+  } catch (err) {
+    const status = err instanceof PaymentError ? err.status : 500;
+    const message = err instanceof Error ? err.message : "Payment gateway error";
+    return res.status(status).json({ error: message });
+  }
   const order = await Order.create({
     orderNo, user: req.user?.id, items: lines, amounts, address: req.body.address,
     payment: { razorpayOrderId: rzp.id, status: "pending" },
@@ -59,10 +66,14 @@ export async function createOrder(req: AuthReq, res: Response) {
 }
 export async function verifyPayment(req: AuthReq, res: Response) {
   const { orderNo, razorpay_order_id, razorpay_payment_id, razorpay_signature } = req.body;
+  if (!orderNo || !razorpay_order_id || !razorpay_payment_id || !razorpay_signature) {
+    return res.status(400).json({ error: "Missing payment verification fields" });
+  }
   if (!verifySignature(razorpay_order_id, razorpay_payment_id, razorpay_signature))
     return res.status(400).json({ error: "Signature mismatch" });
   const order = await Order.findOne({ orderNo });
   if (!order) return res.status(404).json({ error: "Order not found" });
+  if (order.payment?.status === "paid") return res.json({ ok: true, order });
   if (!order.payment) {
     order.payment = { status: "paid", razorpayPaymentId: razorpay_payment_id };
   } else {
@@ -96,37 +107,38 @@ export async function verifyPayment(req: AuthReq, res: Response) {
   } catch (err) {
     console.error("notify failed for order.paid", order.orderNo, err);
   }
-  const addr = (order.address ?? {}) as Record<string, string>;
+  const addr = (order.address ?? {}) as Record<string, string | null | undefined>;
+  const nn = <T>(v: T | null | undefined): T | undefined => v ?? undefined;
   void sendOrderConfirmationEmail({
     orderNo: order.orderNo,
     email: addr.email || "",
     name: [addr.firstName, addr.lastName].filter(Boolean).join(" "),
     items: (order.items ?? []).map((i) => ({
-      name: i.name,
-      color: i.color,
-      size: i.size,
-      qty: i.qty,
-      price: i.price,
+      name: nn(i.name),
+      color: nn(i.color),
+      size: nn(i.size),
+      qty: nn(i.qty),
+      price: nn(i.price),
     })),
     amounts: {
-      subtotal: order.amounts?.subtotal,
-      mrp: order.amounts?.mrp,
-      discount: order.amounts?.discount,
-      discountPct: order.amounts?.discountPct,
-      shipping: order.amounts?.shipping,
-      gst: order.amounts?.gst,
-      total: order.amounts?.total,
+      subtotal: nn(order.amounts?.subtotal),
+      mrp: nn(order.amounts?.mrp),
+      discount: nn(order.amounts?.discount),
+      discountPct: nn(order.amounts?.discountPct),
+      shipping: nn(order.amounts?.shipping),
+      gst: nn(order.amounts?.gst),
+      total: nn(order.amounts?.total),
     },
     address: {
-      firstName: addr.firstName,
-      lastName: addr.lastName,
-      address: addr.address,
-      city: addr.city,
-      pin: addr.pin,
-      phone: addr.phone,
-      email: addr.email,
+      firstName: nn(addr.firstName),
+      lastName: nn(addr.lastName),
+      address: nn(addr.address),
+      city: nn(addr.city),
+      pin: nn(addr.pin),
+      phone: nn(addr.phone),
+      email: nn(addr.email),
     },
-    paymentId: order.payment?.razorpayPaymentId,
+    paymentId: nn(order.payment?.razorpayPaymentId),
     createdAt: order.createdAt,
   }).catch((err) => console.error("[mail] order confirm failed", order.orderNo, err));
   res.json({ ok: true, order });

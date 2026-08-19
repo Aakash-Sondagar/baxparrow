@@ -8,34 +8,46 @@ function esc(s: unknown): string {
     .replace(/"/g, "&quot;");
 }
 
+/** ASCII-safe money — YOPmail/old clients mangled UTF-8 ₹ into â‚¹ */
 function inr(n: number): string {
-  return "₹" + Number(n || 0).toLocaleString("en-IN");
+  return "Rs " + Number(n || 0).toLocaleString("en-IN");
 }
 
 const brand = {
-  cognac: "#8B4513",
+  cognac: "#A94D28",
   ink: "#1A1612",
+  tan: "#E8D5C0",
   muted: "#6B635A",
   border: "#E8E0D6",
   card: "#FAF7F2",
+  bg: "#F3EEE6",
 };
 
+function siteUrl(): string {
+  return (env.mail.siteUrl || env.clientUrl).replace(/\/+$/, "");
+}
+
 function shell(title: string, body: string): string {
+  const site = siteUrl();
   return `<!DOCTYPE html>
-<html>
-<head><meta charset="utf-8"/><meta name="viewport" content="width=device-width"/></head>
-<body style="margin:0;padding:0;background:#F3EEE6;font-family:Georgia,'Times New Roman',serif;color:${brand.ink}">
-  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#F3EEE6;padding:28px 12px">
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+</head>
+<body style="margin:0;padding:0;background:${brand.bg};font-family:Arial,Helvetica,sans-serif;color:${brand.ink}">
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:${brand.bg};padding:28px 12px">
     <tr><td align="center">
-      <table role="presentation" width="100%" style="max-width:560px;background:#fff;border:1px solid ${brand.border};border-radius:14px;overflow:hidden">
-        <tr><td style="background:${brand.ink};padding:18px 24px">
-          <div style="font-size:20px;font-weight:800;letter-spacing:-0.02em;color:#E8D5C0">Baxsparrow</div>
-          <div style="font-size:12px;color:#A89B8C;margin-top:2px">${esc(title)}</div>
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:560px;background:#ffffff;border:1px solid ${brand.border};border-radius:14px;overflow:hidden">
+        <tr><td style="background:${brand.ink};padding:20px 24px">
+          <div style="font-family:Georgia,'Times New Roman',serif;font-size:22px;font-weight:800;letter-spacing:-0.02em;color:${brand.tan}">Baxsparrow</div>
+          <div style="font-size:12px;color:#A89B8C;margin-top:4px">${esc(title)}</div>
         </td></tr>
-        <tr><td style="padding:28px 24px">${body}</td></tr>
+        <tr><td style="padding:24px">${body}</td></tr>
         <tr><td style="padding:16px 24px;border-top:1px solid ${brand.border};font-size:12px;color:${brand.muted}">
           Baxsparrow · Byculla, Mumbai<br/>
-          <a href="${esc(env.clientUrl)}" style="color:${brand.cognac}">${esc(env.clientUrl)}</a>
+          <a href="${esc(site)}" style="color:${brand.cognac}">${esc(site.replace(/^https?:\/\//, ""))}</a>
         </td></tr>
       </table>
     </td></tr>
@@ -46,20 +58,23 @@ function shell(title: string, body: string): string {
 
 export function welcomeEmailHtml(name: string): { subject: string; html: string; text: string } {
   const first = (name || "there").trim().split(/\s+/)[0] || "there";
-  const shop = `${env.clientUrl}/shop`;
-  const account = `${env.clientUrl}/account`;
+  const site = siteUrl();
+  const shop = `${site}/shop`;
+  const account = `${site}/account`;
   const html = shell(
     "Welcome",
-    `<p style="margin:0 0 12px;font-size:22px;font-weight:700">Welcome, ${esc(first)}.</p>
-     <p style="margin:0 0 18px;font-size:15px;line-height:1.55;color:${brand.muted}">
+    `<p style="margin:0 0 10px;font-size:22px;font-weight:700;line-height:1.3">Welcome, ${esc(first)}.</p>
+     <p style="margin:0 0 20px;font-size:14px;line-height:1.6;color:${brand.muted}">
        Your Baxsparrow account is ready. Track orders, save your details, and shop bags from Mumbai.
      </p>
-     <p style="margin:0 0 22px">
-       <a href="${esc(shop)}" style="display:inline-block;background:${brand.cognac};color:#fff;text-decoration:none;padding:12px 20px;border-radius:10px;font-weight:700;font-size:14px">Shop bags</a>
-       &nbsp;
-       <a href="${esc(account)}" style="display:inline-block;color:${brand.cognac};font-weight:700;font-size:14px;padding:12px 8px">My orders</a>
-     </p>
-     <p style="margin:0;font-size:13px;color:${brand.muted}">Questions? Reply to this email or visit our FAQ.</p>`
+     <table role="presentation" cellpadding="0" cellspacing="0"><tr>
+       <td style="background:${brand.cognac};border-radius:10px">
+         <a href="${esc(shop)}" style="display:inline-block;padding:12px 20px;color:#ffffff;text-decoration:none;font-weight:700;font-size:14px">Shop bags</a>
+       </td>
+       <td style="padding-left:14px">
+         <a href="${esc(account)}" style="color:${brand.cognac};font-weight:700;font-size:14px;text-decoration:none">My orders</a>
+       </td>
+     </tr></table>`
   );
   return {
     subject: "Welcome to Baxsparrow",
@@ -103,28 +118,58 @@ export type OrderMailData = {
   createdAt?: Date | string;
 };
 
+function kvRow(label: string, value: string): string {
+  const v = value.trim();
+  if (!v) return "";
+  return `<tr>
+    <td width="92" valign="top" style="padding:7px 12px 7px 0;font-size:12px;color:${brand.muted};white-space:nowrap">${esc(label)}</td>
+    <td valign="top" style="padding:7px 0;font-size:13px;color:${brand.ink};line-height:1.45">${esc(v)}</td>
+  </tr>`;
+}
+
+function looksEmail(s: string): boolean {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(s.trim());
+}
+
+function deliverTable(order: OrderMailData): string {
+  const a = order.address;
+  const email = (a.email || order.email || "").trim();
+  const street = (a.address || "").trim();
+  const who = [a.firstName, a.lastName].filter(Boolean).join(" ").trim() || order.name;
+  const skipStreet = looksEmail(street) && street.toLowerCase() === email.toLowerCase();
+  const rows = [
+    kvRow("Name", who),
+    kvRow("Address", skipStreet ? "" : street),
+    kvRow("City", a.city || ""),
+    kvRow("PIN", a.pin || ""),
+    kvRow("Mobile", a.phone || ""),
+    kvRow("Email", email),
+  ]
+    .filter(Boolean)
+    .join("");
+  return `<table role="presentation" width="100%" cellpadding="0" cellspacing="0">${rows}</table>`;
+}
+
 function lineRows(items: OrderMailItem[]): string {
   return items
     .map((i) => {
-      const meta = [i.color, i.size].filter(Boolean).join(" · ");
-      const qty = Number(i.qty || 1);
-      const price = Number(i.price || 0);
+      const meta = [i.color, i.size, `Qty ${Number(i.qty || 1)}`].filter(Boolean).join(" · ");
+      const price = Number(i.price || 0) * Number(i.qty || 1);
       return `<tr>
-        <td style="padding:10px 0;border-bottom:1px solid ${brand.border};font-size:14px">
-          <div style="font-weight:600">${esc(i.name || "Item")}</div>
-          ${meta ? `<div style="font-size:12px;color:${brand.muted}">${esc(meta)}</div>` : ""}
-          <div style="font-size:12px;color:${brand.muted}">Qty ${qty}</div>
+        <td valign="top" style="padding:12px 16px 12px 0;border-bottom:1px solid ${brand.border}">
+          <span style="display:block;font-size:14px;font-weight:700;color:${brand.ink}">${esc(i.name || "Item")}</span>
+          <span style="display:block;font-size:12px;color:${brand.muted};padding-top:3px">${esc(meta)}</span>
         </td>
-        <td style="padding:10px 0;border-bottom:1px solid ${brand.border};text-align:right;font-size:14px;white-space:nowrap">${esc(inr(price * qty))}</td>
+        <td valign="top" align="right" style="padding:12px 0;border-bottom:1px solid ${brand.border};font-size:14px;white-space:nowrap">${inr(price)}</td>
       </tr>`;
     })
     .join("");
 }
 
 function totalsBlock(a: OrderMailData["amounts"]): string {
-  const rows: [string, string][] = [
+  const rows: [string, string, boolean?][] = [
     ["MRP", inr(a.mrp ?? 0)],
-    ["Discount", a.discount ? `−${inr(a.discount)}` : "—"],
+    ["Discount", a.discount ? `- ${inr(a.discount)}` : "-"],
     ["Selling price", inr(a.subtotal ?? 0)],
     ["GST (18% incl.)", inr(a.gst ?? 0)],
     ["Shipping", (a.shipping ?? 0) === 0 ? "FREE" : inr(a.shipping ?? 0)],
@@ -133,78 +178,69 @@ function totalsBlock(a: OrderMailData["amounts"]): string {
     rows
       .map(
         ([k, v]) =>
-          `<tr><td style="padding:4px 0;font-size:13px;color:${brand.muted}">${esc(k)}</td>
-           <td style="padding:4px 0;font-size:13px;text-align:right">${esc(v)}</td></tr>`
+          `<tr>
+            <td style="padding:5px 16px 5px 0;font-size:13px;color:${brand.muted}">${esc(k)}</td>
+            <td align="right" style="padding:5px 0;font-size:13px;white-space:nowrap">${v}</td>
+          </tr>`
       )
       .join("") +
-    `<tr><td style="padding:12px 0 0;font-size:16px;font-weight:800;border-top:1px solid ${brand.border}">Total</td>
-     <td style="padding:12px 0 0;font-size:16px;font-weight:800;text-align:right;border-top:1px solid ${brand.border}">${esc(inr(a.total ?? 0))}</td></tr>`
+    `<tr>
+      <td style="padding:12px 16px 0 0;font-size:16px;font-weight:800;border-top:1px solid ${brand.border}">Total</td>
+      <td align="right" style="padding:12px 0 0;font-size:16px;font-weight:800;white-space:nowrap;border-top:1px solid ${brand.border}">${inr(a.total ?? 0)}</td>
+    </tr>`
   );
-}
-
-export function buildInvoiceHtml(order: OrderMailData): string {
-  const who = [order.address.firstName, order.address.lastName].filter(Boolean).join(" ") || order.name;
-  const addr = [
-    order.address.address,
-    [order.address.city, order.address.pin].filter(Boolean).join(" "),
-    order.address.phone ? `Mobile: ${order.address.phone}` : "",
-    order.address.email || order.email,
-  ]
-    .filter(Boolean)
-    .join("<br/>");
-  const when = order.createdAt ? new Date(order.createdAt).toLocaleString("en-IN") : new Date().toLocaleString("en-IN");
-
-  return `<!DOCTYPE html>
-<html><head><meta charset="utf-8"/><title>Invoice ${esc(order.orderNo)}</title></head>
-<body style="font-family:Georgia,serif;color:${brand.ink};max-width:640px;margin:24px auto;padding:0 16px">
-  <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:24px">
-    <div>
-      <div style="font-size:22px;font-weight:800">Baxsparrow</div>
-      <div style="font-size:12px;color:${brand.muted}">Tax invoice / order receipt</div>
-    </div>
-    <div style="text-align:right;font-size:13px">
-      <div><strong>${esc(order.orderNo)}</strong></div>
-      <div style="color:${brand.muted}">${esc(when)}</div>
-      ${order.paymentId ? `<div style="color:${brand.muted}">Pay ID: ${esc(order.paymentId)}</div>` : ""}
-    </div>
-  </div>
-  <div style="margin-bottom:20px;padding:14px;background:${brand.card};border-radius:10px;font-size:13px;line-height:1.5">
-    <strong>Bill to</strong><br/>${esc(who)}<br/>${addr}
-  </div>
-  <table width="100%" cellpadding="0" cellspacing="0">${lineRows(order.items)}</table>
-  <table width="100%" cellpadding="0" cellspacing="0" style="margin-top:12px">${totalsBlock(order.amounts)}</table>
-  <p style="margin-top:28px;font-size:12px;color:${brand.muted}">GST included in selling price where applicable. Thank you for shopping with Baxsparrow.</p>
-</body></html>`;
 }
 
 export function orderConfirmationEmail(order: OrderMailData): {
   subject: string;
   html: string;
   text: string;
-  invoiceHtml: string;
 } {
-  const track = `${env.clientUrl}/order/${encodeURIComponent(order.orderNo)}/track`;
+  const site = siteUrl();
+  const track = `${site}/order/${encodeURIComponent(order.orderNo)}/track`;
   const first =
     order.address.firstName ||
     (order.name || "there").trim().split(/\s+/)[0] ||
     "there";
-  const invoiceHtml = buildInvoiceHtml(order);
+  const when = order.createdAt
+    ? new Date(order.createdAt).toLocaleString("en-IN")
+    : new Date().toLocaleString("en-IN");
+
   const html = shell(
     "Order confirmation",
-    `<p style="margin:0 0 8px;font-size:22px;font-weight:700">Payment confirmed</p>
-     <p style="margin:0 0 6px;font-size:14px;color:${brand.muted}">Hi ${esc(first)}, thanks for your order.</p>
-     <p style="margin:0 0 18px;font-family:ui-monospace,monospace;font-size:13px;color:${brand.cognac}">${esc(order.orderNo)} · ${esc(inr(order.amounts.total ?? 0))}</p>
-     <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:8px">${lineRows(order.items)}</table>
-     <table width="100%" cellpadding="0" cellspacing="0" style="margin:8px 0 20px">${totalsBlock(order.amounts)}</table>
-     <p style="margin:0 0 22px">
-       <a href="${esc(track)}" style="display:inline-block;background:${brand.cognac};color:#fff;text-decoration:none;padding:12px 20px;border-radius:10px;font-weight:700;font-size:14px">Track order</a>
-     </p>
-     <p style="margin:0;font-size:13px;color:${brand.muted}">Invoice attached as HTML — open or print it for your records.</p>`
+    `<p style="margin:0 0 6px;font-size:22px;font-weight:700;line-height:1.25">Payment confirmed</p>
+     <p style="margin:0 0 18px;font-size:14px;color:${brand.muted};line-height:1.5">Hi ${esc(first)}, thanks for your order.</p>
+     <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:0 0 18px">
+       <tr>
+         <td valign="top" style="padding:10px 12px 10px 0;border-top:1px solid ${brand.border};border-bottom:1px solid ${brand.border}">
+           <span style="display:block;font-size:11px;color:${brand.muted};letter-spacing:0.04em">ORDER</span>
+           <span style="display:block;font-size:14px;font-weight:700;color:${brand.cognac};padding-top:3px">${esc(order.orderNo)}</span>
+         </td>
+         <td valign="top" align="right" style="padding:10px 0;border-top:1px solid ${brand.border};border-bottom:1px solid ${brand.border}">
+           <span style="display:block;font-size:11px;color:${brand.muted};letter-spacing:0.04em">TOTAL</span>
+           <span style="display:block;font-size:14px;font-weight:700;padding-top:3px">${inr(order.amounts.total ?? 0)}</span>
+         </td>
+       </tr>
+       <tr>
+         <td colspan="2" style="padding:8px 0 0;font-size:12px;color:${brand.muted}">${esc(when)}${order.paymentId ? ` &nbsp;·&nbsp; ${esc(order.paymentId)}` : ""}</td>
+       </tr>
+     </table>
+     <p style="margin:0 0 8px;font-size:12px;font-weight:700;letter-spacing:0.04em;color:${brand.muted}">DELIVER TO</p>
+     <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:0 0 20px;background:${brand.card};border-radius:10px">
+       <tr><td style="padding:12px 14px">${deliverTable(order)}</td></tr>
+     </table>
+     <table role="presentation" width="100%" cellpadding="0" cellspacing="0">${lineRows(order.items)}</table>
+     <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:8px 0 18px">${totalsBlock(order.amounts)}</table>
+     <p style="margin:0 0 18px;font-size:12px;color:${brand.muted}">GST included in selling price where applicable.</p>
+     <table role="presentation" cellpadding="0" cellspacing="0"><tr>
+       <td style="background:${brand.cognac};border-radius:10px">
+         <a href="${esc(track)}" style="display:inline-block;padding:12px 20px;color:#ffffff;text-decoration:none;font-weight:700;font-size:14px">Track order</a>
+       </td>
+     </tr></table>`
   );
   return {
     subject: `Order confirmed · ${order.orderNo}`,
     html,
     text: `Order ${order.orderNo} confirmed. Total ${inr(order.amounts.total ?? 0)}. Track: ${track}`,
-    invoiceHtml,
   };
 }
