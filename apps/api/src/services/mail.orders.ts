@@ -18,12 +18,5 @@ export async function sendOrderConfirmationEmail(order: OrderMailData): Promise<
     subject: msg.subject,
     html: msg.html,
     text: msg.text,
-    attachments: [
-      {
-        filename: `Baxsparrow-Invoice-${order.orderNo}.html`,
-        content: msg.invoiceHtml,
-        contentType: "text/html",
-      },
-    ],
   });
 }
