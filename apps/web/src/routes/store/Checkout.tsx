@@ -138,11 +138,23 @@ export default function Checkout() {
         email: address.email,
         contact: address.phone,
         onSuccess: async (r) => {
-          await verifyPayment({ orderNo, ...r });
-          await clear();
-          nav("/order/" + orderNo + "/confirmed");
+          try {
+            await verifyPayment({ orderNo, ...r });
+            await clear();
+            nav("/order/" + orderNo + "/confirmed");
+          } catch (e: any) {
+            setErr(e?.response?.data?.error ?? "Payment verification failed");
+            setBusy(false);
+          }
         },
-        onDismiss: () => setBusy(false),
+        onFailed: (reason) => {
+          setErr(reason);
+          setBusy(false);
+        },
+        onDismiss: () => {
+          setErr("Payment cancelled");
+          setBusy(false);
+        },
       });
     } catch (e: any) {
       const data = e?.response?.data;
