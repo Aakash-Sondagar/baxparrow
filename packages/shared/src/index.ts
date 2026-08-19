@@ -20,6 +20,40 @@ export const loginSchema = z.object({
 
 export const MAX_PRODUCT_IMAGES = 6;
 
+/** Extract YouTube video id from watch / youtu.be / embed / shorts URLs. */
+export function youtubeVideoId(raw: string): string | null {
+  const s = raw.trim();
+  if (!s) return null;
+  try {
+    const u = new URL(s.startsWith("http") ? s : `https://${s}`);
+    const host = u.hostname.replace(/^www\./, "");
+    if (host === "youtu.be") {
+      const id = u.pathname.split("/").filter(Boolean)[0];
+      return id && /^[\w-]{11}$/.test(id) ? id : null;
+    }
+    if (host === "youtube.com" || host === "m.youtube.com" || host === "youtube-nocookie.com") {
+      if (u.searchParams.get("v") && /^[\w-]{11}$/.test(u.searchParams.get("v")!))
+        return u.searchParams.get("v");
+      const parts = u.pathname.split("/").filter(Boolean);
+      if ((parts[0] === "embed" || parts[0] === "shorts" || parts[0] === "live") && parts[1])
+        return /^[\w-]{11}$/.test(parts[1]) ? parts[1] : null;
+    }
+  } catch {
+    return null;
+  }
+  return null;
+}
+
+export const youtubeUrlSchema = z
+  .string()
+  .trim()
+  .max(300)
+  .optional()
+  .or(z.literal(""))
+  .refine((v) => !v || Boolean(youtubeVideoId(v)), {
+    message: "Enter a valid YouTube link",
+  });
+
 export const variantSchema = z.object({
   color: z.string().min(1),
   sku: z
@@ -30,6 +64,7 @@ export const variantSchema = z.object({
   mrp: z.number().int().nonnegative(),
   stock: z.number().int().nonnegative().default(0),
   images: z.array(z.string().url()).max(MAX_PRODUCT_IMAGES).default([]),
+  youtubeUrl: youtubeUrlSchema,
 });
 export type VariantInput = z.infer<typeof variantSchema>;
 
@@ -48,7 +83,7 @@ export const productSchema = z.object({
   images: z.array(z.string().url()).max(MAX_PRODUCT_IMAGES).default([]),
   colors: z.array(z.string().min(1)).max(12).default([]),
   sizes: z.array(z.string().min(1)).max(12).default([]),
-  /** Per-colour inventory / price / SKU / images */
+  /** Per-colour inventory / price / SKU / images / video */
   variants: z.array(variantSchema).max(12).default([]),
   bulkPrice: z.number().int().nonnegative().optional(),
   moq: z.number().int().positive().optional(),
