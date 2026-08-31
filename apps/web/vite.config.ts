@@ -7,7 +7,7 @@ export default defineConfig({
   plugins: [react(), tailwindcss()],
   resolve: {
     alias: {
-      "@baxparrow/shared": fileURLToPath(new URL("../../packages/shared/src", import.meta.url)),
+      "@baxparrow/shared": fileURLToPath(new URL("../../packages/shared/src/index.ts", import.meta.url)),
     },
   },
   server: { port: 5173 },
