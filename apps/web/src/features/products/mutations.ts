@@ -14,5 +14,9 @@ export async function deleteProduct(id: string) {
 export async function bulkImport(file: File) {
   const form = new FormData();
   form.append("file", file);
-  return (await api.post("/admin/products/bulk", form)).data as { imported: number; errors: any[] };
+  return (await api.post("/admin/products/bulk", form)).data as {
+    imported: number;
+    variantCount?: number;
+    errors: { row: number; error: string }[];
+  };
 }

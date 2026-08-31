@@ -29,7 +29,18 @@ export const env = {
   /** Allowed browser origins for CORS */
   corsOrigins: [...new Set([clientUrl, ...extra, "http://localhost:5173"])],
   razorpay: { keyId: req("RAZORPAY_KEY_ID"), keySecret: req("RAZORPAY_KEY_SECRET") },
-  shiprocket: { email: req("SHIPROCKET_EMAIL"), password: req("SHIPROCKET_PASSWORD") },
+  shiprocket: {
+    email: req("SHIPROCKET_EMAIL"),
+    password: req("SHIPROCKET_PASSWORD"),
+    /** Pickup nickname from Shiprocket Settings → Pickup addresses (often "Primary") */
+    pickup: req("SHIPROCKET_PICKUP", "Primary"),
+    weightKg: Number(req("SHIPROCKET_WEIGHT_KG", "0.5")) || 0.5,
+    lengthCm: Number(req("SHIPROCKET_L_CM", "30")) || 30,
+    breadthCm: Number(req("SHIPROCKET_B_CM", "20")) || 20,
+    heightCm: Number(req("SHIPROCKET_H_CM", "12")) || 12,
+    /** Assign courier AWB on pay — needs KYC + wallet. Leave off until those exist. */
+    autoAwb: req("SHIPROCKET_AUTO_AWB") === "1",
+  },
   cloudinary: {
     cloudName: req("CLOUDINARY_CLOUD_NAME"),
     apiKey: req("CLOUDINARY_API_KEY"),

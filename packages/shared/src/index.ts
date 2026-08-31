@@ -18,11 +18,19 @@ export const loginSchema = z.object({
   password: z.string().min(1, "Password is required").max(72),
 });
 
+export const forgotPasswordSchema = z.object({
+  email: z.string().trim().email().max(100),
+});
+export const resetPasswordSchema = z.object({
+  token: z.string().regex(/^[a-f0-9]{64}$/, "Invalid reset link"),
+  password: z.string().min(6, "Password must be at least 6 characters").max(72),
+});
+
 export const MAX_PRODUCT_IMAGES = 6;
 
 /** Extract YouTube video id from watch / youtu.be / embed / shorts URLs. */
-export function youtubeVideoId(raw: string): string | null {
-  const s = raw.trim();
+export function youtubeVideoId(raw: unknown): string | null {
+  const s = String(raw ?? "").trim();
   if (!s) return null;
   try {
     const u = new URL(s.startsWith("http") ? s : `https://${s}`);
@@ -91,9 +99,12 @@ export const productSchema = z.object({
 });
 export type ProductInput = z.infer<typeof productSchema>;
 
+export const MAX_CART_QTY = 99;
+export const MAX_CART_LINES = 50;
+
 export const cartItemSchema = z.object({
   product: z.string(), color: z.string().optional(), size: z.string().optional(),
-  qty: z.number().int().positive(),
+  qty: z.number().int().positive().max(MAX_CART_QTY),
 });
 export const addToCartSchema = cartItemSchema;
 
@@ -130,9 +141,53 @@ export const addressSchema = z.object({
     .min(1, "Mobile number is required")
     .regex(/^[6-9]\d{9}$/, "Enter a valid 10-digit mobile"),
 });
+export const ORDER_STATUSES = ["pending", "processing", "shipped", "delivered"] as const;
+export type OrderStatus = (typeof ORDER_STATUSES)[number];
+export const updateOrderStatusSchema = z.object({
+  status: z.enum(ORDER_STATUSES),
+  note: z.string().max(200).optional(),
+});
+
+export const RETURN_WINDOW_DAYS = 7;
+export const RETURN_STATUSES = ["requested", "approved", "received", "refunded", "rejected"] as const;
+export type ReturnStatus = (typeof RETURN_STATUSES)[number];
+
+export const RETURN_REASONS = [
+  "Damaged or defective",
+  "Wrong item delivered",
+  "Not as described",
+  "Quality not as expected",
+  "Changed my mind",
+  "Other",
+] as const;
+export const RETURN_OTHER = "Other";
+export const MAX_RETURN_IMAGES = 4;
+export const MAX_RETURN_IMAGE_BYTES = 5 * 1024 * 1024;
+
+export function returnWindowOpen(deliveredAt?: string | Date | null, now = new Date()): boolean {
+  if (!deliveredAt) return false;
+  return now.getTime() - new Date(deliveredAt).getTime() <= RETURN_WINDOW_DAYS * 86_400_000;
+}
+
+export const requestReturnSchema = z
+  .object({
+    reason: z.enum(RETURN_REASONS),
+    reasonDetail: z.string().trim().max(500).optional(),
+    images: z.array(z.string().url()).min(1, "Add at least 1 photo").max(MAX_RETURN_IMAGES),
+  })
+  .refine((d) => d.reason !== RETURN_OTHER || (d.reasonDetail ?? "").trim().length >= 5, {
+    message: "Please describe your reason",
+    path: ["reasonDetail"],
+  });
+
+export const updateReturnSchema = z.object({
+  status: z.enum(["approved", "received", "refunded", "rejected"]),
+  note: z.string().max(300).optional(),
+});
+
 export const createOrderSchema = z.object({
   address: addressSchema,
-  items: z.array(cartItemSchema).optional(),
+  items: z.array(cartItemSchema).max(MAX_CART_LINES).optional(),
 });
 
 export const wholesaleLeadSchema = z.object({
@@ -151,6 +206,9 @@ export const NOTIFICATION_TYPES = [
   "order.new",
   "order.paid",
   "order.status",
+  "return.requested",
+  "return.updated",
+  "return.refunded",
   "inventory.low",
   "inventory.out",
   "product.created",
@@ -166,6 +224,8 @@ export const CUSTOMER_NOTIFICATION_TYPES = [
   "order.new",
   "order.paid",
   "order.status",
+  "return.updated",
+  "return.refunded",
   "system",
 ] as const;
 

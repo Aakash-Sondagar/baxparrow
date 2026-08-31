@@ -1,8 +1,13 @@
 import { sendMail } from "./mail.service.js";
-import { orderConfirmationEmail, welcomeEmailHtml, type OrderMailData } from "./mail.templates.js";
+import { orderConfirmationEmail, passwordResetEmailHtml, welcomeEmailHtml, type OrderMailData } from "./mail.templates.js";
 
 export async function sendWelcomeEmail(to: string, name: string): Promise<void> {
   const msg = welcomeEmailHtml(name);
+  await sendMail({ to, ...msg });
+}
+
+export async function sendPasswordResetEmail(to: string, name: string, resetUrl: string): Promise<void> {
+  const msg = passwordResetEmailHtml(name, resetUrl);
   await sendMail({ to, ...msg });
 }
 

@@ -1,7 +1,8 @@
 import { api } from "./api";
 // Signs via our API, then uploads the file straight to Cloudinary. Returns the secure URL.
-export async function uploadImage(file: File): Promise<string> {
-  const { data: sig } = await api.post("/admin/uploads/sign");
+// signPath defaults to the admin route; customers pass "/uploads/sign" (returns folder).
+export async function uploadImage(file: File, signPath = "/admin/uploads/sign"): Promise<string> {
+  const { data: sig } = await api.post(signPath);
   const form = new FormData();
   form.append("file", file);
   form.append("api_key", sig.apiKey);

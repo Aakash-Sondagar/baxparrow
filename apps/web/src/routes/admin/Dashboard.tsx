@@ -15,7 +15,8 @@ const cap = (s: string) => s ? s[0].toUpperCase() + s.slice(1) : "";
 
 export default function Dashboard() {
   const { data: m } = useMetrics();
-  const { data: orders = [] } = useAdminOrders("All");
+  const { data: orderList } = useAdminOrders("All");
+  const orders = orderList?.items ?? [];
 
   const chartData = m?.chart && m.chart.length > 0 ? m.chart : [
     { day: "Mon", v: 0 }, { day: "Tue", v: 0 }, { day: "Wed", v: 0 },

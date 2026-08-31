@@ -3,7 +3,7 @@ import rateLimit from "express-rate-limit";
 import multer from "multer";
 import { validate } from "../middleware/validate.js";
 import { auth, optionalAuth, requireRole } from "../middleware/auth.js";
-import { registerSchema, loginSchema, addToCartSchema, createOrderSchema, productSchema, wholesaleLeadSchema, categorySchema } from "@baxparrow/shared";
+import { registerSchema, loginSchema, addToCartSchema, createOrderSchema, productSchema, wholesaleLeadSchema, categorySchema, updateOrderStatusSchema, requestReturnSchema, updateReturnSchema, forgotPasswordSchema, resetPasswordSchema } from "@baxparrow/shared";
 import * as A from "../controllers/auth.controller.js";
 import * as P from "../controllers/product.controller.js";
 import * as C from "../controllers/cart.controller.js";
@@ -16,13 +16,29 @@ import { Category } from "../models/Category.js";
 const upload = multer();
 const r = Router();
 const authLimit = rateLimit({ windowMs: 15 * 60_000, max: 30 });
+const loginLimit = rateLimit({
+  windowMs: 15 * 60_000,
+  max: 10,
+  message: { error: "Too many login attempts. Try again later." },
+});
+const forgotLimit = rateLimit({
+  windowMs: 15 * 60_000,
+  max: 5,
+  message: { error: "Too many requests. Try again later." },
+});
+const resetLimit = rateLimit({ windowMs: 15 * 60_000, max: 10 });
 
 // auth
 r.post("/auth/register", authLimit, validate(registerSchema), A.register);
-r.post("/auth/login", authLimit, validate(loginSchema), A.login);
+r.post("/auth/login", loginLimit, validate(loginSchema), A.login);
+r.post("/auth/forgot-password", forgotLimit, validate(forgotPasswordSchema), A.forgotPassword);
+r.post("/auth/reset-password", resetLimit, validate(resetPasswordSchema), A.resetPassword);
 r.post("/auth/logout", A.logout);
 r.get("/auth/me", auth, A.me);
 r.get("/me/orders", auth, O.myOrders);
+
+// customer-scoped image upload (return photos) — signs into the returns folder only
+r.post("/uploads/sign", auth, U.signReturnUpload);
 
 // catalog (public)
 r.get("/products", P.list);
@@ -40,6 +56,7 @@ r.patch("/cart", optionalAuth, C.setItems);
 r.post("/orders", optionalAuth, validate(createOrderSchema), O.createOrder);
 r.post("/payments/verify", optionalAuth, O.verifyPayment);
 r.get("/orders/:no/track", optionalAuth, O.track);
+r.post("/orders/:no/return", auth, validate(requestReturnSchema), O.requestReturnController);
 
 // admin
 r.post("/admin/uploads/sign", auth, requireRole("admin"), U.signUpload);
@@ -50,7 +67,8 @@ r.patch("/admin/products/:id", auth, requireRole("admin"), P.update);
 r.delete("/admin/products/:id", auth, requireRole("admin"), P.remove);
 r.post("/admin/products/bulk", auth, requireRole("admin"), upload.single("file"), Ad.bulkImport);
 r.get("/admin/orders", auth, requireRole("admin"), Ad.listOrders);
-r.patch("/admin/orders/:no/status", auth, requireRole("admin"), Ad.updateOrderStatus);
+r.patch("/admin/orders/:no/status", auth, requireRole("admin"), validate(updateOrderStatusSchema), Ad.updateOrderStatus);
+r.patch("/admin/orders/:no/return", auth, requireRole("admin"), validate(updateReturnSchema), Ad.updateReturnController);
 r.get("/admin/metrics", auth, requireRole("admin"), Ad.metrics);
 r.get("/admin/categories", auth, requireRole("admin"), Ad.listCategories);
 r.post("/admin/categories", auth, requireRole("admin"), validate(categorySchema), Ad.createCategory);

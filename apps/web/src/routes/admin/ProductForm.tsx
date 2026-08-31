@@ -233,7 +233,7 @@ export default function ProductForm() {
         return;
       }
       const picked = [...files].slice(0, room);
-      const urls = await Promise.all(picked.map(uploadImage));
+      const urls = await Promise.all(picked.map((f) => uploadImage(f)));
       patchVariant(vi, {
         images: [...current, ...urls].slice(0, MAX_PRODUCT_IMAGES),
       });
@@ -465,9 +465,9 @@ export default function ProductForm() {
                   placeholder="https://www.youtube.com/watch?v=… or youtu.be/…"
                   className={field}
                 />
-                {youtubeVideoId(v.youtubeUrl) && (
+                {youtubeVideoId(v.youtubeUrl ?? "") && (
                   <img
-                    src={`https://img.youtube.com/vi/${youtubeVideoId(v.youtubeUrl)}/mqdefault.jpg`}
+                    src={`https://img.youtube.com/vi/${youtubeVideoId(v.youtubeUrl ?? "")}/mqdefault.jpg`}
                     alt=""
                     className="mt-2 h-16 w-28 rounded-[8px] object-cover"
                   />

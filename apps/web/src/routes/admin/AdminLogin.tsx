@@ -2,8 +2,8 @@ import { useState } from "react";
 import { useAuth } from "../../features/auth/AuthContext";
 export default function AdminLogin() {
   const { login } = useAuth();
-  const [email, setEmail] = useState("admin@baxparrow.com");
-  const [password, setPassword] = useState("admin123");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [err, setErr] = useState("");
   const [busy, setBusy] = useState(false);
   const field = "mt-1.5 w-full rounded-[10px] border border-border px-3.5 py-3 text-sm outline-none";
@@ -20,12 +20,11 @@ export default function AdminLogin() {
           <div><div className="font-display text-lg font-extrabold">Baxparrow</div><div className="font-mono text-[11px] text-muted2">ADMIN SIGN IN</div></div>
         </div>
         <label className="text-[13px] text-text3">Email</label>
-        <input value={email} onChange={e => setEmail(e.target.value)} className={field} />
+        <input type="email" autoComplete="username" value={email} onChange={e => setEmail(e.target.value)} className={field} />
         <label className="mt-3.5 block text-[13px] text-text3">Password</label>
-        <input type="password" value={password} onChange={e => setPassword(e.target.value)} className={field} />
+        <input type="password" autoComplete="current-password" value={password} onChange={e => setPassword(e.target.value)} className={field} />
         {err && <div className="mt-3 text-[13px] text-danger">{err}</div>}
         <button disabled={busy} className="mt-5 w-full cursor-pointer rounded-[11px] border-none bg-cognac p-3.5 font-bold text-white disabled:opacity-60">{busy ? "Signing in…" : "Sign in"}</button>
-        <p className="mt-3.5 text-center text-xs text-muted2">Seeded dev login prefilled. Change in production.</p>
       </form>
     </div>
   );

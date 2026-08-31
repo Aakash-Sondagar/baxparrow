@@ -5,7 +5,7 @@
   "main": "src/index.ts",
   "scripts": {
     "dev": "tsc -w --noEmit",
-    "build": "tsc",
+    "build": "tsc --noEmit",
     "lint": "echo ok"
   },
   "dependencies": {
