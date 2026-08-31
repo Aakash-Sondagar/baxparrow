@@ -1,5 +1,5 @@
 import { Types } from "mongoose";
-import { computeTotals } from "@baxparrow/shared";
+import { computeTotals, MAX_CART_QTY } from "@baxparrow/shared";
 import { Product } from "../models/Product.js";
 import { Cart } from "../models/Cart.js";
 import { resolveVariant } from "./variant.service.js";
@@ -120,8 +120,8 @@ export function normalizeItems(items: CartLineInput[]): CartLineInput[] {
     const size = raw.size ? String(raw.size) : undefined;
     const key = `${product}|${color ?? ""}|${size ?? ""}`;
     const ex = map.get(key);
-    if (ex) ex.qty += qty;
-    else map.set(key, { product, color, size, qty });
+    if (ex) ex.qty = Math.min(MAX_CART_QTY, ex.qty + qty);
+    else map.set(key, { product, color, size, qty: Math.min(MAX_CART_QTY, qty) });
   }
   return [...map.values()];
 }
