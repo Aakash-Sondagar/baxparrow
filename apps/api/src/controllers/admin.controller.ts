@@ -1,69 +1,118 @@
 import type { Request, Response } from "express";
 import { parse } from "csv-parse/sync";
+import { CATEGORIES } from "@baxparrow/shared";
 import { Product } from "../models/Product.js";
 import { Order } from "../models/Order.js";
 import { Category } from "../models/Category.js";
-import { productSchema } from "@baxparrow/shared";
 import { slugify } from "../utils/slugify.js";
 import { notifyAdmins, notifyUsers } from "../services/notify.service.js";
+import { assembleBulkProducts, collectSkus, rowForSku } from "../services/bulk-import.service.js";
+import { updateReturn } from "../services/return.service.js";
 import type { AuthReq } from "../middleware/auth.js";
-export async function metrics(_req: Request, res: Response) {
-  const [orders, allProducts] = await Promise.all([Order.find().sort("-createdAt"), Product.find()]);
-  const paidOrders = orders.filter(o => o.payment?.status === "paid");
-  const revenue = paidOrders.reduce((a, o) => a + (o.amounts?.total ?? 0), 0);
-  const products = allProducts.length;
-  const lowStock = allProducts.filter(p => (p.stock ?? 0) <= 10).length;
-  const aov = paidOrders.length
-    ? Math.round(revenue / paidOrders.length)
-    : (orders.length ? Math.round(orders.reduce((a, o) => a + (o.amounts?.total ?? 0), 0) / orders.length) : 0);
 
-  const days = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
-  const last7Days: { day: string; v: number; dateStr: string }[] = [];
+export async function metrics(_req: Request, res: Response) {
   const now = new Date();
+  const weekStart = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() - 6));
+
+  const [orderStats, chartAgg, productStats, catFacet] = await Promise.all([
+    Order.aggregate<{
+      orders: number;
+      paidCount: number;
+      paidRevenue: number;
+      allRevenue: number;
+    }>([
+      {
+        $group: {
+          _id: null,
+          orders: { $sum: 1 },
+          paidCount: { $sum: { $cond: [{ $eq: ["$payment.status", "paid"] }, 1, 0] } },
+          paidRevenue: {
+            $sum: { $cond: [{ $eq: ["$payment.status", "paid"] }, { $ifNull: ["$amounts.total", 0] }, 0] },
+          },
+          allRevenue: { $sum: { $ifNull: ["$amounts.total", 0] } },
+        },
+      },
+    ]),
+    Order.aggregate<{ _id: string; v: number }>([
+      { $match: { createdAt: { $gte: weekStart } } },
+      {
+        $group: {
+          _id: { $dateToString: { format: "%Y-%m-%d", date: "$createdAt" } },
+          v: { $sum: { $ifNull: ["$amounts.total", 0] } },
+        },
+      },
+    ]),
+    Product.aggregate<{ products: number; lowStock: number }>([
+      {
+        $group: {
+          _id: null,
+          products: { $sum: 1 },
+          lowStock: { $sum: { $cond: [{ $lte: [{ $ifNull: ["$stock", 0] }, 10] }, 1, 0] } },
+        },
+      },
+    ]),
+    Product.aggregate<{ top: { _id: string; count: number }[]; total: { n: number }[] }>([
+      { $match: { category: { $nin: [null, ""] } } },
+      { $group: { _id: "$category", count: { $sum: 1 } } },
+      {
+        $facet: {
+          top: [{ $sort: { count: -1 } }, { $limit: 4 }],
+          total: [{ $group: { _id: null, n: { $sum: "$count" } } }],
+        },
+      },
+    ]),
+  ]);
+
+  const os = orderStats[0] ?? { orders: 0, paidCount: 0, paidRevenue: 0, allRevenue: 0 };
+  const revenue = os.paidRevenue;
+  const aov = os.paidCount
+    ? Math.round(revenue / os.paidCount)
+    : os.orders
+      ? Math.round(os.allRevenue / os.orders)
+      : 0;
+
+  const byDay = new Map(chartAgg.map((d) => [d._id, d.v]));
+  const days = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+  const chart: { day: string; v: number }[] = [];
   for (let i = 6; i >= 0; i--) {
-    const d = new Date(now);
-    d.setDate(now.getDate() - i);
-    const dayName = days[d.getDay()];
-    const dateStr = d.toISOString().split("T")[0];
-    last7Days.push({ day: dayName, v: 0, dateStr });
+    const d = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() - i));
+    const dateStr = d.toISOString().slice(0, 10);
+    chart.push({ day: days[d.getUTCDay()], v: byDay.get(dateStr) ?? 0 });
   }
 
-  orders.forEach(o => {
-    const orderDate = new Date(o.createdAt).toISOString().split("T")[0];
-    const match = last7Days.find(d => d.dateStr === orderDate);
-    if (match) {
-      match.v += (o.amounts?.total ?? 0);
-    }
-  });
-
-  const chart = last7Days.map(({ day, v }) => ({ day, v }));
-
-  const catCounts: Record<string, number> = {};
-  allProducts.forEach(p => {
-    if (p.category) {
-      catCounts[p.category] = (catCounts[p.category] || 0) + 1;
-    }
-  });
-  const totalCatProducts = Object.values(catCounts).reduce((a, b) => a + b, 0) || 1;
-  const topCategories = Object.entries(catCounts)
-    .map(([name, count]) => ({ name, pct: Math.round((count / totalCatProducts) * 100) }))
-    .sort((a, b) => b.pct - a.pct)
-    .slice(0, 4);
+  const ps = productStats[0] ?? { products: 0, lowStock: 0 };
+  const facet = catFacet[0];
+  const totalCatProducts = facet?.total?.[0]?.n || 1;
+  const topCategories = (facet?.top ?? []).map((c) => ({
+    name: c._id,
+    pct: Math.round((c.count / totalCatProducts) * 100),
+  }));
 
   res.json({
     revenue,
-    orders: orders.length,
-    products,
-    lowStock,
+    orders: os.orders,
+    products: ps.products,
+    lowStock: ps.lowStock,
     aov,
     chart,
     topCategories,
   });
 }
 export async function listOrders(req: Request, res: Response) {
-  const { status } = req.query as Record<string,string>;
-  const filter = status && status !== "All" ? { status: status.toLowerCase() } : {};
-  res.json(await Order.find(filter).sort("-createdAt").limit(100));
+  const { status, returnStatus, page = "1", limit = "50" } = req.query as Record<string, string>;
+  const filter: Record<string, unknown> = {};
+  const s = (status ?? "").trim().toLowerCase();
+  if (s && s !== "all") filter.status = s;
+  if (returnStatus) {
+    filter["return.status"] = returnStatus === "any" ? { $exists: true } : returnStatus;
+  }
+  const pg = Math.max(1, +page || 1);
+  const lim = Math.min(100, Math.max(1, +limit || 50));
+  const [items, total] = await Promise.all([
+    Order.find(filter).sort("-createdAt").skip((pg - 1) * lim).limit(lim),
+    Order.countDocuments(filter),
+  ]);
+  res.json({ items, total, page: pg, pages: Math.max(1, Math.ceil(total / lim)) });
 }
 export async function listProducts(req: Request, res: Response) {
   const { category, status, q, sort = "-createdAt", page = "1", limit = "12" } = req.query as Record<string, string>;
@@ -111,81 +160,107 @@ export async function updateOrderStatus(req: Request, res: Response) {
   }
   res.json(order);
 }
+
+export async function updateReturnController(req: AuthReq, res: Response) {
+  const order = await Order.findOne({ orderNo: req.params.no });
+  if (!order) return res.status(404).json({ error: "Not found" });
+  try {
+    await updateReturn(order, req.body.status, req.body.note);
+    res.json(order);
+  } catch (err) {
+    const status = typeof (err as any)?.status === "number" ? (err as any).status : 500;
+    const message = err instanceof Error ? err.message : "Failed";
+    res.status(status).json({ error: message });
+  }
+}
+
 export async function bulkImport(req: AuthReq, res: Response) {
   try {
     const csv = (req.file?.buffer ?? Buffer.from(req.body.csv ?? "")).toString();
-    const rows = parse(csv, { columns: true, skip_empty_lines: true, trim: true });
-    if (!rows.length) return res.status(400).json({ imported: 0, errors: [{ row: 0, error: "CSV is empty" }] });
+    const rows = parse(csv, { columns: true, skip_empty_lines: true, trim: true, bom: true }) as Record<string, unknown>[];
+    if (!rows.length) return res.status(400).json({ imported: 0, variantCount: 0, errors: [{ row: 0, error: "CSV is empty" }] });
 
-    const errors: { row: number; error: string }[] = [];
-    const docs: any[] = [];
-    const seenSku = new Set<string>();
+    const dbCats = await Category.find().select("name").lean();
+    const allowedCategories = dbCats.length ? dbCats.map((c) => c.name) : [...CATEGORIES];
+    const { docs, errors, variantCount, skuRows } = assembleBulkProducts(rows, { allowedCategories });
+    if (errors.length) return res.status(400).json({ imported: 0, variantCount: 0, errors });
 
-    rows.forEach((r: any, i: number) => {
-      const row = i + 1;
-      const skuRaw = String(r.sku ?? "").trim().toUpperCase();
-      const parsed = productSchema.safeParse({
-        ...r,
-        sku: skuRaw,
-        price: +r.price,
-        mrp: +r.mrp,
-        stock: +(r.stock ?? 0),
-        images: r.image_url ? [r.image_url] : [],
-      });
-      if (!parsed.success) {
-        const msg = Object.entries(parsed.error.flatten().fieldErrors)
-          .map(([k, v]) => `${k}: ${(v as string[])?.join(", ")}`)
-          .join("; ") || "invalid row";
-        errors.push({ row, error: msg });
-        return;
-      }
-      if (seenSku.has(parsed.data.sku)) {
-        errors.push({ row, error: `Duplicate SKU in CSV: ${parsed.data.sku}` });
-        return;
-      }
-      seenSku.add(parsed.data.sku);
-      docs.push({ ...parsed.data, slug: slugify(parsed.data.name) + "-" + Date.now().toString(36) + "-" + i });
-    });
-
-    if (errors.length) return res.status(400).json({ imported: 0, errors });
-
-    const skus = docs.map((d) => d.sku);
-    const existing = await Product.find({ sku: { $in: skus } }).select("sku").lean();
+    const skus = collectSkus(docs);
+    const existing = await Product.find({
+      $or: [{ sku: { $in: skus } }, { "variants.sku": { $in: skus } }],
+    })
+      .select("sku variants.sku")
+      .lean();
     if (existing.length) {
-      const bySku = new Map(docs.map((d, idx) => [d.sku, idx]));
-      const rowErrors = existing.map((p) => {
-        const idx = bySku.get(p.sku!);
-        return { row: (idx ?? 0) + 1, error: `SKU already exists: ${p.sku}` };
+      const taken = new Set<string>();
+      for (const p of existing) {
+        if (p.sku) taken.add(p.sku);
+        for (const v of p.variants ?? []) {
+          if (v?.sku) taken.add(v.sku);
+        }
+      }
+      const hits = skus.filter((s) => taken.has(s));
+      return res.status(400).json({
+        imported: 0,
+        variantCount: 0,
+        errors: hits.map((sku) => ({ row: rowForSku(skuRows, sku), error: `SKU already exists: ${sku}` })),
       });
-      return res.status(400).json({ imported: 0, errors: rowErrors });
     }
 
-    await Product.insertMany(docs, { ordered: true });
+    const stamp = Date.now().toString(36);
+    const toInsert = docs.map((d, i) => ({
+      ...d,
+      slug: slugify(String(d.name ?? "product")) + "-" + stamp + "-" + i,
+    }));
+
+    try {
+      await Product.insertMany(toInsert, { ordered: false });
+    } catch (err: any) {
+      const writeErrors: any[] = err?.writeErrors ?? err?.result?.writeErrors ?? [];
+      if (err?.code === 11000 || writeErrors.length) {
+        const dupes = writeErrors.length
+          ? writeErrors.map((we: any) => {
+              const op = we?.err?.op ?? we?.op ?? {};
+              const sku = op.sku ?? op.variants?.[0]?.sku ?? err?.keyValue?.sku ?? err?.keyValue?.["variants.sku"];
+              return { row: rowForSku(skuRows, sku), error: sku ? `SKU already exists: ${sku}` : "Duplicate key (SKU or slug)" };
+            })
+          : [{
+              row: rowForSku(skuRows, err?.keyValue?.sku ?? err?.keyValue?.["variants.sku"]),
+              error: err?.keyValue?.sku
+                ? `SKU already exists: ${err.keyValue.sku}`
+                : "Duplicate key (SKU or slug)",
+            }];
+        const imported = err.result?.insertedCount ?? err.insertedDocs?.length ?? 0;
+        return res.status(400).json({ imported, variantCount: imported ? variantCount : 0, errors: dupes });
+      }
+      throw err;
+    }
 
     if (req.user?.id) {
       try {
         await notifyUsers([req.user.id], {
           type: "bulk.completed",
           title: "Bulk upload complete",
-          body: `Imported ${docs.length} products`,
+          body: `Imported ${docs.length} products (${variantCount} colours)`,
           href: "/admin/products",
-          meta: { imported: docs.length },
+          meta: { imported: docs.length, variantCount },
         });
       } catch (err) {
         console.error("notify failed for bulk.completed", err);
       }
     }
-    res.json({ imported: docs.length, errors: [] });
+    res.json({ imported: docs.length, variantCount, errors: [] });
   } catch (err: any) {
     console.error("bulkImport failed", err);
     if (err?.code === 11000) {
-      const sku = err?.keyValue?.sku ?? err?.writeErrors?.[0]?.err?.op?.sku;
+      const sku = err?.keyValue?.sku ?? err?.keyValue?.["variants.sku"] ?? err?.writeErrors?.[0]?.err?.op?.sku;
       return res.status(400).json({
         imported: 0,
+        variantCount: 0,
         errors: [{ row: 0, error: sku ? `SKU already exists: ${sku}` : "Duplicate key (SKU or slug)" }],
       });
     }
-    res.status(500).json({ imported: 0, errors: [{ row: 0, error: err?.message ?? "Import failed" }] });
+    res.status(500).json({ imported: 0, variantCount: 0, errors: [{ row: 0, error: err?.message ?? "Import failed" }] });
   }
 }
 
