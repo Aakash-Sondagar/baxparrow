@@ -18,6 +18,8 @@ import Returns from "../routes/store/Returns";
 import Warranty from "../routes/store/Warranty";
 import Account from "../routes/store/Account";
 import AccountAuth from "../routes/store/AccountAuth";
+import ForgotPassword from "../routes/store/ForgotPassword";
+import ResetPassword from "../routes/store/ResetPassword";
 import Dashboard from "../routes/admin/Dashboard";
 import Products from "../routes/admin/Products";
 import ProductForm from "../routes/admin/ProductForm";
@@ -44,6 +46,8 @@ export const router = createBrowserRouter([
     { path: "account", element: <Account /> },
     { path: "login", element: <AccountAuth /> },
     { path: "signup", element: <AccountAuth /> },
+    { path: "forgot-password", element: <ForgotPassword /> },
+    { path: "reset-password", element: <ResetPassword /> },
   ]},
   { path: "/admin", element: <ProtectedAdmin><AdminLayout /></ProtectedAdmin>, children: [
     { index: true, element: <Navigate to="/admin/dashboard" replace /> },
