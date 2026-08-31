@@ -23,7 +23,7 @@ api.interceptors.response.use(
   (res) => res,
   (err) => {
     const url = String(err.config?.url ?? "");
-    const isAuthAttempt = /\/auth\/(login|register)/.test(url);
+    const isAuthAttempt = /\/auth\/(login|register|forgot-password|reset-password)/.test(url);
     if (err.response?.status === 401 && !isAuthAttempt) {
       setToken(null);
       localStorage.removeItem("bx_user");
