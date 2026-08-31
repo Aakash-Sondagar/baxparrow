@@ -83,6 +83,31 @@ export function welcomeEmailHtml(name: string): { subject: string; html: string;
   };
 }
 
+export function passwordResetEmailHtml(name: string, resetUrl: string): { subject: string; html: string; text: string } {
+  const first = (name || "there").trim().split(/\s+/)[0] || "there";
+  const url = esc(resetUrl);
+  const html = shell(
+    "Reset your password",
+    `<p style="margin:0 0 10px;font-size:22px;font-weight:700;line-height:1.3">Password reset</p>
+     <p style="margin:0 0 20px;font-size:14px;line-height:1.6;color:${brand.muted}">
+       Hi ${esc(first)}, we received a request to reset your Baxsparrow password. This link expires in 1 hour and can be used once. If you didn't ask for this, you can safely ignore this email.
+     </p>
+     <table role="presentation" cellpadding="0" cellspacing="0"><tr>
+       <td style="background:${brand.cognac};border-radius:10px">
+         <a href="${url}" style="display:inline-block;padding:12px 20px;color:#ffffff;text-decoration:none;font-weight:700;font-size:14px">Reset password</a>
+       </td>
+     </tr></table>
+     <p style="margin:20px 0 0;font-size:12px;line-height:1.6;color:${brand.muted};word-break:break-all">
+       Or copy this link into your browser:<br/>${url}
+     </p>`
+  );
+  return {
+    subject: "Reset your Baxsparrow password",
+    html,
+    text: `Reset your Baxsparrow password (expires in 1 hour): ${resetUrl}`,
+  };
+}
+
 export type OrderMailItem = {
   name?: string;
   color?: string;
