@@ -147,7 +147,14 @@ export default function AccountAuth({ embedded }: { embedded?: boolean }) {
         {fieldErr.email && <div className="mt-1 text-[12px] text-danger">{fieldErr.email}</div>}
       </div>
       <div>
-        <label className={label}>Password</label>
+        <div className="flex items-center justify-between">
+          <label className={label}>Password</label>
+          {mode === "login" && (
+            <Link to="/forgot-password" className="text-[12px] font-semibold text-cognac">
+              Forgot password?
+            </Link>
+          )}
+        </div>
         <input
           type="password"
           value={password}
