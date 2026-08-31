@@ -38,3 +38,22 @@ export function verifySignature(orderId: string, paymentId: string, signature: s
     .update(orderId + "|" + paymentId).digest("hex");
   return expected === signature;
 }
+
+export async function refundPayment(paymentId: string, amountPaise?: number) {
+  if (!rzp) {
+    return { id: "rfnd_stub_" + paymentId, amount: amountPaise ?? 0, stub: true };
+  }
+  try {
+    return await rzp.payments.refund(paymentId, {
+      ...(amountPaise ? { amount: amountPaise } : {}),
+      speed: "normal",
+    });
+  } catch (err: any) {
+    const status = err?.statusCode ?? err?.error?.statusCode;
+    if (status === 401 || status === 403) {
+      throw new PaymentError("Razorpay authentication failed", 401);
+    }
+    const msg = err?.error?.description ?? err?.message ?? "Refund failed";
+    throw new PaymentError(msg, 500);
+  }
+}
