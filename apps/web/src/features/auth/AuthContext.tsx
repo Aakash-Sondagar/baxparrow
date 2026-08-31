@@ -6,6 +6,7 @@ type Ctx = {
   user: User | null;
   login: (e: string, p: string) => Promise<void>;
   register: (n: string, e: string, p: string) => Promise<void>;
+  resetPassword: (t: string, p: string) => Promise<void>;
   loginGoogle: () => void;
   logout: () => void;
 };
@@ -40,6 +41,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     persist(data.user, data.accessToken);
   };
 
+  const resetPassword = async (token: string, password: string) => {
+    const { data } = await api.post("/auth/reset-password", { token, password });
+    persist(data.user, data.accessToken);
+  };
+
   const loginGoogle = () => {
     window.location.href = (import.meta.env.VITE_API_URL ?? "") + "/auth/google";
   };
@@ -58,7 +64,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   return (
-    <AuthCtx.Provider value={{ user, login, register, loginGoogle, logout }}>
+    <AuthCtx.Provider value={{ user, login, register, resetPassword, loginGoogle, logout }}>
       {children}
     </AuthCtx.Provider>
   );
