@@ -7,6 +7,14 @@ import { createRzpOrder, PaymentError, verifySignature } from "../services/payme
 import { createShipment, trackAwb } from "../services/shipping.service.js";
 import { notifyAdmins, notifyUsers } from "../services/notify.service.js";
 import { sendOrderConfirmationEmail } from "../services/mail.orders.js";
+import { decrementOrderStock, requestReturn } from "../services/return.service.js";
+
+function httpErr(err: unknown): { status: number; message: string } {
+  const status = typeof (err as any)?.status === "number" ? (err as any).status : 500;
+  const message = err instanceof Error ? err.message : "Request failed";
+  return { status, message };
+}
+
 export async function createOrder(req: AuthReq, res: Response) {
   const guestKey = String(req.headers["x-cart-key"] ?? "").trim();
   // Prefer Mongo cart (authoritative). Client items only if no server cart.
@@ -27,21 +35,44 @@ export async function createOrder(req: AuthReq, res: Response) {
     items = req.body.items as typeof items;
   }
   if (!items?.length) return res.status(400).json({ error: "Cart empty" });
-  const { lines, amounts } = await buildOrderLines(items);
-  const orderNo = genOrderNo();
-  let rzp;
+
+  let lines;
+  let amounts;
   try {
-    rzp = await createRzpOrder(amounts.total * 100, orderNo);
+    ({ lines, amounts } = await buildOrderLines(items));
   } catch (err) {
-    const status = err instanceof PaymentError ? err.status : 500;
-    const message = err instanceof Error ? err.message : "Payment gateway error";
+    const { status, message } = httpErr(err);
     return res.status(status).json({ error: message });
   }
-  const order = await Order.create({
-    orderNo, user: req.user?.id, items: lines, amounts, address: req.body.address,
-    payment: { razorpayOrderId: rzp.id, status: "pending" },
-    timeline: [{ status: "pending", at: new Date(), note: "Order created" }],
-  });
+
+  let order;
+  let orderNo = "";
+  for (let attempt = 0; attempt < 3; attempt++) {
+    orderNo = await genOrderNo();
+    let rzp;
+    try {
+      rzp = await createRzpOrder(amounts.total * 100, orderNo);
+    } catch (err) {
+      const status = err instanceof PaymentError ? err.status : 500;
+      const message = err instanceof Error ? err.message : "Payment gateway error";
+      return res.status(status).json({ error: message });
+    }
+    try {
+      order = await Order.create({
+        orderNo, user: req.user?.id, items: lines, amounts, address: req.body.address,
+        payment: { razorpayOrderId: rzp.id, status: "pending" },
+        timeline: [{ status: "pending", at: new Date(), note: "Order created" }],
+      });
+      break;
+    } catch (err: any) {
+      if (err?.code !== 11000 || attempt === 2) {
+        const { status, message } = httpErr(err);
+        return res.status(status).json({ error: message });
+      }
+    }
+  }
+  if (!order) return res.status(500).json({ error: "Could not allocate order number" });
+
   try {
     await notifyAdmins({
       type: "order.new",
@@ -62,8 +93,9 @@ export async function createOrder(req: AuthReq, res: Response) {
   } catch (err) {
     console.error("notify failed for order.new", orderNo, err);
   }
-  res.status(201).json({ order, orderNo, razorpayOrderId: rzp.id, amount: amounts.total });
+  res.status(201).json({ order, orderNo, razorpayOrderId: order.payment?.razorpayOrderId, amount: amounts.total });
 }
+
 export async function verifyPayment(req: AuthReq, res: Response) {
   const { orderNo, razorpay_order_id, razorpay_payment_id, razorpay_signature } = req.body;
   if (!orderNo || !razorpay_order_id || !razorpay_payment_id || !razorpay_signature) {
@@ -73,6 +105,9 @@ export async function verifyPayment(req: AuthReq, res: Response) {
     return res.status(400).json({ error: "Signature mismatch" });
   const order = await Order.findOne({ orderNo });
   if (!order) return res.status(404).json({ error: "Order not found" });
+  if (order.payment?.razorpayOrderId !== razorpay_order_id) {
+    return res.status(400).json({ error: "Order id mismatch" });
+  }
   if (order.payment?.status === "paid") return res.json({ ok: true, order });
   if (!order.payment) {
     order.payment = { status: "paid", razorpayPaymentId: razorpay_payment_id };
@@ -82,8 +117,18 @@ export async function verifyPayment(req: AuthReq, res: Response) {
   }
   order.status = "processing";
   order.timeline.push({ status: "processing", at: new Date(), note: "Payment received via Razorpay" });
-  order.shipment = await createShipment(order);
   await order.save();
+  try {
+    await decrementOrderStock(order);
+  } catch (err) {
+    console.error("[stock] decrement failed", order.orderNo, err);
+  }
+  try {
+    order.shipment = await createShipment(order);
+    await order.save();
+  } catch (err) {
+    console.error("[shiprocket] persist shipment failed", order.orderNo, err);
+  }
   if (req.user) await Cart.findOneAndUpdate({ user: req.user.id }, { items: [] });
   const guestKey = String(req.headers["x-cart-key"] ?? "").trim();
   if (guestKey) await Cart.findOneAndUpdate({ guestKey }, { items: [] });
@@ -143,18 +188,36 @@ export async function verifyPayment(req: AuthReq, res: Response) {
   }).catch((err) => console.error("[mail] order confirm failed", order.orderNo, err));
   res.json({ ok: true, order });
 }
+
 export async function track(req: AuthReq, res: Response) {
   const order = await Order.findOne({ orderNo: req.params.no });
   if (!order) return res.status(404).json({ error: "Order not found" });
   const live = order.shipment?.awb ? await trackAwb(order.shipment.awb) : [];
-  res.json({ order, timeline: order.timeline, live });
+  const timeline =
+    live.length > 0
+      ? live.map((e) => ({ status: e.status, at: e.at, note: e.note }))
+      : order.timeline;
+  res.json({ order, timeline, live });
 }
 
 export async function myOrders(req: AuthReq, res: Response) {
   if (!req.user?.id) return res.status(401).json({ error: "Unauthorized" });
   const orders = await Order.find({ user: req.user.id })
     .sort({ createdAt: -1 })
-    .select("orderNo status amounts address payment createdAt items.name items.qty items.color")
+    .select("orderNo status amounts address payment createdAt items.name items.qty items.color return.status")
     .lean();
   res.json(orders);
+}
+
+export async function requestReturnController(req: AuthReq, res: Response) {
+  if (!req.user?.id) return res.status(401).json({ error: "Unauthorized" });
+  const order = await Order.findOne({ orderNo: req.params.no });
+  if (!order) return res.status(404).json({ error: "Order not found" });
+  try {
+    await requestReturn(order, req.body, req.user.id);
+    res.json({ ok: true, order });
+  } catch (err) {
+    const { status, message } = httpErr(err);
+    res.status(status).json({ error: message });
+  }
 }
