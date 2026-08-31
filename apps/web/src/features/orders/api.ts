@@ -29,6 +29,13 @@ export async function trackOrder(no: string) {
   return (await api.get(`/orders/${no}/track`)).data;
 }
 
+export async function requestReturn(
+  no: string,
+  payload: { reason: string; reasonDetail?: string; images: string[] }
+) {
+  return (await api.post(`/orders/${no}/return`, payload)).data;
+}
+
 export async function myOrders() {
   return (await api.get("/me/orders")).data as Array<{
     _id: string;
@@ -38,5 +45,6 @@ export async function myOrders() {
     createdAt: string;
     items: Array<{ name?: string; qty?: number; color?: string }>;
     payment?: { status?: string };
+    return?: { status?: string };
   }>;
 }
