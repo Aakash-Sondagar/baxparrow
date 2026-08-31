@@ -24,5 +24,22 @@ const orderSchema = new Schema({
   shipment: { shiprocketId: String, awb: String, courier: String },
   status: { type: String, enum: ["pending","processing","shipped","delivered"], default: "pending" },
   timeline: [{ status: String, at: Date, note: String }],
+  return: {
+    status: { type: String, enum: ["requested","approved","received","refunded","rejected"] },
+    reason: String,
+    reasonDetail: String,
+    images: [String],
+    requestedAt: Date,
+    approvedAt: Date,
+    receivedAt: Date,
+    refundedAt: Date,
+    rejectedAt: Date,
+    rejectionNote: String,
+    refundId: String,
+    refundAmount: Number,
+    restocked: { type: Boolean, default: false },
+    reverseShipment: { shiprocketId: String, awb: String, courier: String },
+    timeline: [{ status: String, at: Date, note: String }],
+  },
 }, { timestamps: true });
 export const Order = model("Order", orderSchema);
