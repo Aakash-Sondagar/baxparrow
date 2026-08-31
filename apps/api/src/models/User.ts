@@ -9,6 +9,8 @@ const userSchema = new Schema({
   googleId: String,
   role: { type: String, enum: ["customer","wholesale","admin"], default: "customer" },
   addresses: [addressSub],
+  resetTokenHash: { type: String },
+  resetExpiresAt: { type: Date },
 }, { timestamps: true });
 export const User = model("User", userSchema);
 export type UserDoc = { _id: Types.ObjectId; name: string; email: string; role: string; passwordHash?: string };
