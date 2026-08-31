@@ -65,17 +65,37 @@ VITE_RAZORPAY_KEY_ID=rzp_test_xxxxxxxxxxxxx
 On successful payment the server creates a Shiprocket shipment and stores the **AWB**; the tracking page reads status from it. Auth uses your Shiprocket account email/password to fetch a token (cached ~9h).
 
 ### Steps
-1. Create an account at **https://www.shiprocket.in** and add a pickup address.
-2. **Settings → API → Configure** → create **API User credentials** (a dedicated email + password, separate from your dashboard login).
-3. Use those API-user credentials below.
+1. Account exists — skip signup. **Do KYC** when ready for live AWB (wallet ₹0 blocks courier assign, not order create).
+2. Add a **pickup address**: sidebar **Settings (wrench)** → Pickup addresses. Note the **nickname** (often `Primary`).
+3. Create **API user** (not your Baxparrow seller login):
+   - Sidebar **Settings (wrench)** → **API** → **Configure** → **Create an API User**
+   - Email must be **different** from dashboard login
+   - Copy email + password once
+4. Paste into `apps/api/.env` and restart API.
 
 ### `apps/api/.env`
 ```
 SHIPROCKET_EMAIL=api-user@yourdomain.com
 SHIPROCKET_PASSWORD=api-user-password
+SHIPROCKET_PICKUP=Primary
 ```
 
-> Until set, `createShipment`/`trackAwb` return stubs and the tracking page shows the sample timeline. The `createShipment` payload mapping (weight, dimensions, pickup location) is stubbed in `services/shipping.service.ts` — complete it with your product dimensions and pickup nickname before going live.
+`SHIPROCKET_PICKUP` must match pickup **nickname** in Shiprocket.
+
+On payment, API creates a Shiprocket order (`POST /orders/create/adhoc`). AWB assign is off until `SHIPROCKET_AUTO_AWB=1` (needs KYC + wallet). Track page uses AWB when present; else order timeline.
+
+### Test
+1. Auth (API user, not seller login):
+```
+curl -s -X POST https://apiv2.shiprocket.in/v1/external/auth/login ^
+  -H "Content-Type: application/json" ^
+  -d "{\"email\":\"YOUR_API_EMAIL\",\"password\":\"YOUR_API_PASSWORD\"}"
+```
+Must return `"token"`. `401` = used dashboard login or wrong API user.
+2. Pay a test order on site. API log: `[shiprocket] order BX-… shipment …`
+3. Shiprocket dashboard → **Orders** — custom order id = our `orderNo`.
+
+> Payment still succeeds if Shiprocket errors (logged, shipment fields empty).
 
 ---
 
@@ -114,5 +134,5 @@ GOOGLE_CLIENT_SECRET=your-secret
 | Admin dashboard | `GET /admin/metrics`, `GET /admin/orders` |
 | Admin products | `GET /products`, `POST /admin/products` |
 | Admin add-product images | `POST /admin/uploads/sign` → Cloudinary |
-| Admin bulk upload | `POST /admin/products/bulk` |
+| Admin bulk upload | `POST /admin/products/bulk` — CSV: one row per colour (`product_key` groups a product). Optional `image_urls` (pipe-separated); admin UI can upload `{SKU}_n.jpg` first. |
 | Admin orders | `GET /admin/orders`, `PATCH /admin/orders/:no/status` |
