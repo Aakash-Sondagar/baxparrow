@@ -1,10 +1,18 @@
 import type { Request, Response } from "express";
+import crypto from "crypto";
 import bcrypt from "bcryptjs";
 import { User } from "../models/User.js";
 import { Order } from "../models/Order.js";
 import { signAccess, signRefresh } from "../utils/token.js";
 import type { AuthReq } from "../middleware/auth.js";
-import { sendWelcomeEmail } from "../services/mail.orders.js";
+import { env } from "../config/env.js";
+import { sendWelcomeEmail, sendPasswordResetEmail } from "../services/mail.orders.js";
+
+const RESET_TTL_MS = 60 * 60_000; // 1 hour
+
+function sha256(s: string): string {
+  return crypto.createHash("sha256").update(s).digest("hex");
+}
 
 function session(user: { _id: unknown; name: string; email: string; role: string }) {
   const payload = { id: String(user._id), role: user.role };
@@ -77,4 +85,38 @@ export async function me(req: AuthReq, res: Response) {
   const user = await User.findById(id).select("name email role").lean();
   if (!user) return res.status(404).json({ error: "User not found" });
   res.json({ id: user._id, name: user.name, email: user.email, role: user.role });
+}
+
+export async function forgotPassword(req: Request, res: Response) {
+  const emailNorm = String(req.body.email).trim().toLowerCase();
+  const message = "If an account exists for that email, a reset link is on its way.";
+  const user = await User.findOne({ email: emailNorm });
+  if (!user) return res.json({ ok: true, message });
+
+  const raw = crypto.randomBytes(32).toString("hex");
+  user.resetTokenHash = sha256(raw);
+  user.resetExpiresAt = new Date(Date.now() + RESET_TTL_MS);
+  await user.save();
+
+  const resetUrl = `${env.mail.siteUrl}/reset-password?token=${raw}`;
+  void sendPasswordResetEmail(user.email, user.name, resetUrl).catch((err) =>
+    console.error("[mail] password reset failed", user.email, err)
+  );
+  return res.json({ ok: true, message });
+}
+
+export async function resetPassword(req: Request, res: Response) {
+  const { token, password } = req.body;
+  const hash = sha256(String(token));
+  const user = await User.findOne({ resetTokenHash: hash, resetExpiresAt: { $gt: new Date() } });
+  if (!user) return res.status(400).json({ error: "This reset link is invalid or has expired." });
+
+  user.passwordHash = await bcrypt.hash(password, 10);
+  user.resetTokenHash = undefined;
+  user.resetExpiresAt = undefined;
+  await user.save();
+
+  const { payload, body } = session(user);
+  res.cookie("refresh", signRefresh(payload), { httpOnly: true, sameSite: "lax" });
+  res.json(body);
 }
