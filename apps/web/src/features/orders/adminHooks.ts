@@ -1,9 +1,27 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api } from "../../lib/api";
-export function useAdminOrders(status: string) {
+
+export type AdminOrderList = {
+  items: any[];
+  total: number;
+  page: number;
+  pages: number;
+};
+
+export function useAdminOrders(status: string, page = 1, returnStatus?: string) {
   return useQuery({
-    queryKey: ["admin-orders", status],
-    queryFn: async () => (await api.get("/admin/orders", { params: status === "All" ? {} : { status } })).data as any[],
+    queryKey: ["admin-orders", status, page, returnStatus ?? null],
+    queryFn: async () =>
+      (
+        await api.get("/admin/orders", {
+          params: {
+            ...(status === "All" ? {} : { status }),
+            ...(returnStatus ? { returnStatus } : {}),
+            page,
+            limit: 50,
+          },
+        })
+      ).data as AdminOrderList,
   });
 }
 export function useUpdateOrderStatus() {
@@ -11,6 +29,14 @@ export function useUpdateOrderStatus() {
   return useMutation({
     mutationFn: async ({ no, status }: { no: string; status: string }) =>
       (await api.patch(`/admin/orders/${no}/status`, { status })).data,
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["admin-orders"] }),
+  });
+}
+export function useUpdateReturn() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ no, status, note }: { no: string; status: string; note?: string }) =>
+      (await api.patch(`/admin/orders/${no}/return`, { status, ...(note ? { note } : {}) })).data,
     onSuccess: () => qc.invalidateQueries({ queryKey: ["admin-orders"] }),
   });
 }
